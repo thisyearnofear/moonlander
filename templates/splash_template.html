@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Splash Screen Template</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .splash-container {
+            width: 1284px;
+            height: 2778px;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .logo {
+            width: 400px;
+            height: 400px;
+            margin-bottom: 100px;
+            z-index: 2;
+        }
+        .title {
+            font-size: 72px;
+            font-family: Arial, sans-serif;
+            color: white;
+            text-align: center;
+            z-index: 2;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        .subtitle {
+            font-size: 36px;
+            color: #aaa;
+            text-align: center;
+            z-index: 2;
+            max-width: 80%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="splash-container">
+        <img src="../images/m00nlander.png" alt="m00nlander" class="logo">
+        <div class="title">m00nlander</div>
+        <div class="subtitle">Prepare for Lunar Landing</div>
+    </div>
+</body>
+</html>

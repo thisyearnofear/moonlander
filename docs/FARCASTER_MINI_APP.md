@@ -36,18 +36,27 @@ The app requires these images to be placed in `/images/`:
 
 ## How to Create Images
 
-### Option 1: Design Tools
+### Option 1: Using Provided HTML Templates (Recommended)
+1. Check the `/templates/` directory for HTML templates that use your existing images:
+   - `splash_template.html` - for splash screen (1284x2778px)
+   - `app_icon_template.html` - for app icon (1024x1024px)
+   - `og_share_template.html` - for OG share image (1200x630px)
+2. Open each template in a browser
+3. Use browser dev tools to set exact dimensions and take screenshots
+4. See `/docs/FARCASTER_ASSETS_GENERATION.md` for detailed instructions
+
+### Option 2: Design Tools
 - Figma: Use templates for Farcaster mini app sizes
 - Canva: Search for mobile app screenshot templates
 - Adobe XD: Create from scratch
 
-### Option 2: Screenshot + Edit
+### Option 3: Screenshot + Edit
 1. Take screenshots of the game in action
 2. Crop to required dimensions
 3. Add text, effects with Figma/Photoshop
 4. Export as PNG
 
-### Option 3: AI Generation
+### Option 4: AI Generation
 Use tools like:
 - Midjourney: "lunar lander game in space, dark background, moon, spacecraft"
 - DALL-E: Similar prompts
