@@ -51,17 +51,18 @@ const commsIntervalMax = 40;
 const scorePerLanding = 100;
 const scoreMultiplierChances = [0.4, 0.2, 0.15, 0.15, 0.1];
 
-const infoPanelFontSize = 20;
-const mainPanelFontSize = 30;
-const statsPanelFontSize = 30;
+// Base HUD font sizes (adjusted for screen size)
+let infoPanelFontSize = 20;
+let mainPanelFontSize = 30;
+let statsPanelFontSize = 30;
 
 const infoPanelTextColor = "rgba(255,255,255,1)";
 const mainPanelTextColor = "rgba(255,255,255,1)";
 const statsPanelTextColor = "rgba(255,255,255,1)";
 
-const infoPanelRelativeOffsetX = 0.03;
-const infoPanelRelativeOffsetY = 0.07;
-const infoPanelRelativeOffsetYStep = 0.03;
+let infoPanelRelativeOffsetX = 0.03;
+let infoPanelRelativeOffsetY = 0.07;
+let infoPanelRelativeOffsetYStep = 0.03;
 
 const mainPanelRelativeOffsetX = 0.5;
 const mainPanelRelativeOffsetY = 0.35;
@@ -70,6 +71,29 @@ const mainPanelRelativeOffsetYStep = 0.05;
 const statsPanelRelativeOffsetX = 0.5;
 const statsPanelRelativeOffsetY = 0.30;
 const statsPanelRelativeOffsetYStep = 0.05;
+
+// ============ Mobile HUD Scaling ============
+/**
+ * Adjust HUD sizes based on screen dimensions
+ */
+function adjustHUDForScreen() {
+  const isMobile = window.innerWidth < 600;
+  const isSmallMobile = window.innerWidth < 400;
+  
+  if (isSmallMobile) {
+    // Very small screens: compact mode
+    infoPanelFontSize = 12;
+    infoPanelRelativeOffsetY = 0.05;
+    infoPanelRelativeOffsetYStep = 0.02;
+    infoPanelRelativeOffsetX = 0.01;
+  } else if (isMobile) {
+    // Tablets/small phones: medium mode
+    infoPanelFontSize = 14;
+    infoPanelRelativeOffsetY = 0.06;
+    infoPanelRelativeOffsetYStep = 0.025;
+    infoPanelRelativeOffsetX = 0.02;
+  }
+}
 
 const multiplierFontSize = 15;
 const multiplierFontColor = "rgba(255,255,255,1)";

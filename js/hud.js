@@ -69,25 +69,50 @@ function fillLeftInfoPanel() {
 }
 
 function fillRightInfoPanel() {
+    const isMobile = window.innerWidth < 600;
+    
     hudContext.textAlign = 'right';
     hudContext.fillStyle = infoPanelTextColor;
     hudContext.font = "Normal "+infoPanelFontSize+"px Courier New";
+    
+    // Always show altitude (critical info)
     hudContext.fillText(
-        "ALTITUDE".padEnd(20, " ") + altitude.toFixed(0).padStart(4, "0"), 
+        isMobile ? "ALT".padEnd(8, " ") : "ALTITUDE".padEnd(20, " ") + altitude.toFixed(0).padStart(4, "0"), 
         hudWidth*(1-infoPanelRelativeOffsetX), 
         hudHeight*(infoPanelRelativeOffsetY+0*infoPanelRelativeOffsetYStep));
+    
+    // Show altitude value on next line for mobile
+    if (isMobile) {
+        hudContext.fillText(
+            altitude.toFixed(0).padStart(4, "0"),
+            hudWidth*(1-infoPanelRelativeOffsetX),
+            hudHeight*(infoPanelRelativeOffsetY+0.5*infoPanelRelativeOffsetYStep));
+    }
+    
+    // Vertical speed (critical for landing)
     hudContext.fillText(
-        "HORIZONTAL SPEED".padEnd(18, " ") + velocityX.toFixed(1).padStart(6, " "), 
+        isMobile ? "V-SPD".padEnd(8, " ") : "VERTICAL SPEED".padEnd(18, " ") + (-velocityY).toFixed(1).padStart(6, " "), 
         hudWidth*(1-infoPanelRelativeOffsetX), 
         hudHeight*(infoPanelRelativeOffsetY+1*infoPanelRelativeOffsetYStep));
-    hudContext.fillText(
-        "VERTICAL SPEED".padEnd(18, " ") + (-velocityY).toFixed(1).padStart(6, " "), 
-        hudWidth*(1-infoPanelRelativeOffsetX), 
-        hudHeight*(infoPanelRelativeOffsetY+2*infoPanelRelativeOffsetYStep));
-    hudContext.fillText(
-        "ROTATION ANGLE".padEnd(18, " ") + (-lander.rotation.z * (180/Math.PI)).toFixed(1).padStart(6, " "), 
-        hudWidth*(1-infoPanelRelativeOffsetX), 
-        hudHeight*(infoPanelRelativeOffsetY+3*infoPanelRelativeOffsetYStep));
+    
+    if (isMobile) {
+        hudContext.fillText(
+            (-velocityY).toFixed(1).padStart(6, " "),
+            hudWidth*(1-infoPanelRelativeOffsetX),
+            hudHeight*(infoPanelRelativeOffsetY+1.5*infoPanelRelativeOffsetYStep));
+    }
+    
+    // Hide horizontal speed and rotation angle on very small screens
+    if (!isMobile) {
+        hudContext.fillText(
+            "HORIZONTAL SPEED".padEnd(18, " ") + velocityX.toFixed(1).padStart(6, " "), 
+            hudWidth*(1-infoPanelRelativeOffsetX), 
+            hudHeight*(infoPanelRelativeOffsetY+2*infoPanelRelativeOffsetYStep));
+        hudContext.fillText(
+            "ROTATION ANGLE".padEnd(18, " ") + (-lander.rotation.z * (180/Math.PI)).toFixed(1).padStart(6, " "), 
+            hudWidth*(1-infoPanelRelativeOffsetX), 
+            hudHeight*(infoPanelRelativeOffsetY+3*infoPanelRelativeOffsetYStep));
+    }
 }
 
 function fillMainPanel() {

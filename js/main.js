@@ -34,6 +34,9 @@ function onLoseFocus() {
 }
 
 function init() {
+    // Adjust HUD for screen size (mobile optimization)
+    adjustHUDForScreen();
+    
     initTHREE();
 
     initColliders();
