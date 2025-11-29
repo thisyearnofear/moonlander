@@ -1,22 +1,28 @@
-// Determine if we're showing menu or results
+// Determine if we're showing results with a score
 const urlParams = new URLSearchParams(window.location.search);
 const scoreFromUrl = parseInt(urlParams.get('score'));
 const landedFromUrl = parseInt(urlParams.get('landed'));
 const finalScore = scoreFromUrl || parseInt(localStorage.getItem('lastScore')) || 0;
 const landed = landedFromUrl !== undefined ? landedFromUrl : parseInt(localStorage.getItem('lastLanded')) || 0;
 
-// Show results only if we have a score from gameplay
-const isResultsScreen = scoreFromUrl > 0;
-const menuContainer = document.getElementById('menuContainer');
-const resultsContainer = document.getElementById('resultsContainer');
+// Show score section only if we have a score from gameplay
+const hasScore = scoreFromUrl > 0;
+const scoreSection = document.getElementById('scoreSection');
+const menuPlayBtn = document.getElementById('menuPlayBtn');
+const playAgainBtn = document.getElementById('playAgain');
+const mainMenuBtn = document.getElementById('mainMenu');
 
-if (isResultsScreen) {
-  menuContainer.style.display = 'none';
-  resultsContainer.style.display = 'block';
+if (hasScore) {
+  scoreSection.style.display = 'block';
   document.getElementById('finalScore').textContent = finalScore;
+  menuPlayBtn.style.display = 'none';
+  playAgainBtn.style.display = 'block';
+  mainMenuBtn.style.display = 'block';
 } else {
-  menuContainer.style.display = 'block';
-  resultsContainer.style.display = 'none';
+  scoreSection.style.display = 'none';
+  menuPlayBtn.style.display = 'block';
+  playAgainBtn.style.display = 'none';
+  mainMenuBtn.style.display = 'none';
 }
 
 // Load and display leaderboard from contract
@@ -37,36 +43,50 @@ async function loadLeaderboard() {
 
 // Fallback: Load and display leaderboard from localStorage
 function loadLocalLeaderboard() {
-  let scores = JSON.parse(localStorage.getItem('moonlanderScores')) || [];
-  
-  // Add current score if not already in list
-  if (finalScore > 0) {
-    scores.push({ score: finalScore, date: new Date().toISOString() });
-    scores.sort((a, b) => b.score - a.score);
-    scores = scores.slice(0, 10); // Keep top 10
-    localStorage.setItem('moonlanderScores', JSON.stringify(scores));
-  }
-  
+   let scores = JSON.parse(localStorage.getItem('moonlanderScores')) || [];
+   
+   // Add current score if not already in list
+   if (finalScore > 0) {
+     scores.push({ score: finalScore, date: new Date().toISOString() });
+     scores.sort((a, b) => b.score - a.score);
+     scores = scores.slice(0, 10); // Keep top 10
+     localStorage.setItem('moonlanderScores', JSON.stringify(scores));
+   }
+   
+   // Populate both leaderboard displays
+   displayLeaderboardEntries(scores, finalScore);
+ }
+
+// Display leaderboard entries
+function displayLeaderboardEntries(scores, highlightScore = 0) {
   const leaderboardList = document.getElementById('leaderboardList');
+  
   leaderboardList.innerHTML = '';
   
   if (scores.length === 0) {
-    leaderboardList.innerHTML = '<div style="text-align: center; opacity: 0.5;">No scores yet</div>';
+    const emptyMsg = '<div style="text-align: center; opacity: 0.5; padding: 1rem;">No scores yet</div>';
+    leaderboardList.innerHTML = emptyMsg;
     return;
   }
   
   scores.forEach((entry, index) => {
-    const div = document.createElement('div');
-    div.className = 'leaderboard-entry';
-    if (entry.score === finalScore && index < 10) {
-      div.classList.add('current');
-    }
-    div.innerHTML = `
-      <span><span class="rank">#${index + 1}</span></span>
-      <span class="score">${entry.score}</span>
-    `;
+    const div = createLeaderboardEntry(entry, index, highlightScore);
     leaderboardList.appendChild(div);
   });
+}
+
+// Create a leaderboard entry element
+function createLeaderboardEntry(entry, index, highlightScore) {
+  const div = document.createElement('div');
+  div.className = 'leaderboard-entry';
+  if (entry.score === highlightScore && highlightScore > 0) {
+    div.classList.add('current');
+  }
+  div.innerHTML = `
+    <span class="rank">#${index + 1}</span>
+    <span class="score">${entry.score}</span>
+  `;
+  return div;
 }
 
 // Random positioning for planets and startails
@@ -107,28 +127,15 @@ document.getElementById('menuPlayBtn').addEventListener('click', async () => {
   }
 });
 
-document.getElementById('menuViewLeaderboard').addEventListener('click', () => {
-  resultsContainer.style.display = 'block';
-  menuContainer.style.display = 'none';
-});
-
-// Results buttons
-document.getElementById('playAgain').addEventListener('click', async () => {
-  // Redirect to menu first
+// Play Again button
+playAgainBtn.addEventListener('click', async () => {
   window.location.href = 'leaderboard.html';
 });
 
-document.getElementById('mainMenu').addEventListener('click', () => {
+// Main Menu button
+mainMenuBtn.addEventListener('click', () => {
   window.location.href = 'leaderboard.html';
 });
-
-// Toggle leaderboard visibility (results page)
-const toggleBtn = document.getElementById('toggleLeaderboard');
-if (toggleBtn) {
-  toggleBtn.addEventListener('click', () => {
-    resultsContainer.classList.add('collapsed');
-  });
-}
 
 // Update menu wallet button when wallet connects
 function updateMenuWalletDisplay(address) {
