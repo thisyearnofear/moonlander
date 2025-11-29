@@ -333,8 +333,8 @@ body:before {
   z-index: 200;
   display: flex;
   flex-direction: column;
-  height: 90vh;
-  max-height: 800px;
+  min-height: auto;
+  max-height: none;
   width: 90%;
   max-width: 700px;
   background: transparent;
@@ -342,6 +342,7 @@ body:before {
   border-radius: 16px;
   overflow: visible;
   transition: all 0.3s ease;
+  padding: 2rem 0;
 }
 
 .unified-container:hover {
@@ -454,17 +455,17 @@ body:before {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  min-height: auto;
 }
 
 .content-section {
-  flex: 1;
+  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
   padding: 2rem;
   gap: 1.5rem;
-  overflow-y: auto;
-  min-height: 0;
+  overflow-y: visible;
+  min-height: auto;
   transition: opacity 0.3s ease;
   background: transparent;
 }
@@ -639,9 +640,11 @@ body:before {
 /* Responsive */
 @media (max-width: 768px) {
   .unified-container {
-    max-height: calc(85vh - 80px);
+    max-height: none;
+    min-height: auto;
     width: 95%;
     max-width: none;
+    padding: 1rem 0;
   }
 
   .top-bar {
