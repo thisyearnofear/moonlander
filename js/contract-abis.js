@@ -319,7 +319,7 @@ export const SPLITS_ABI = [
 // ============ Monad-specific utilities ============
 
 export const MONAD_CONFIG = {
-  chainId: 10143,
+  chainId: 143,
   chainName: 'Monad',
   rpcUrls: [
     'https://rpc.monad.xyz',

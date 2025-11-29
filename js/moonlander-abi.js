@@ -228,7 +228,7 @@ const ERC20_ABI = [
 
 // Monad network config
 const MONAD_CONFIG = {
-  chainId: 10143,
+  chainId: 143,
   chainName: 'Monad',
   rpcUrls: [
     'https://rpc.monad.xyz',

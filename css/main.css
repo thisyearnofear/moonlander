@@ -98,6 +98,98 @@ canvas {
     font-family: 'Courier New', monospace;
 }
 
+/* ============ Modal Dialog ============ */
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    pointer-events: all;
+}
+
+.modal-backdrop.active {
+    display: flex;
+}
+
+.modal-box {
+    background: linear-gradient(135deg, rgba(20, 30, 50, 0.95) 0%, rgba(10, 20, 40, 0.95) 100%);
+    border: 2px solid rgba(74, 144, 226, 0.4);
+    border-radius: 8px;
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 0 30px rgba(74, 144, 226, 0.2), inset 0 0 20px rgba(74, 144, 226, 0.05);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 15px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.modal-message {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 25px;
+    line-height: 1.5;
+    font-family: 'Courier New', monospace;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.modal-button {
+    padding: 10px 20px;
+    background: rgba(74, 144, 226, 0.3);
+    border: 2px solid rgba(74, 144, 226, 0.5);
+    color: rgba(74, 144, 226, 0.9);
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+    flex: 1;
+}
+
+.modal-button:hover {
+    background: rgba(74, 144, 226, 0.4);
+    border-color: rgba(74, 144, 226, 0.8);
+    box-shadow: 0 0 15px rgba(74, 144, 226, 0.3);
+}
+
+.modal-button:active {
+    transform: translateY(2px);
+}
+
 /* ============ Responsive ============ */
 
 @media (max-width: 600px) {

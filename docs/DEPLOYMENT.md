@@ -139,7 +139,7 @@ module.exports = {
     monad: {
       url: "https://rpc.monad.xyz",
       accounts: [process.env.PRIVATE_KEY],
-      chainId: 10143
+      chainId: 143
     }
   }
 };
@@ -179,7 +179,7 @@ In `js/contract-integration.js`, update the `CONFIG` object:
 ```javascript
 const CONFIG = {
   RPC_URL: 'https://rpc.monad.xyz',
-  CHAIN_ID: 10143,
+  CHAIN_ID: 143,
   M00NAD_TOKEN: '0x22cd99ec337a2811f594340a4a41e4a3022b07',
   M00NAD_DECIMALS: 18,
   MOONLANDER_CONTRACT: '0xYOUR_GAME_CONTRACT_ADDRESS',
@@ -305,7 +305,7 @@ RPC_URL=https://rpc.monad.xyz
 **Solution**: Add Monad to MetaMask:
 - Network Name: `Monad`
 - RPC URL: `https://rpc.monad.xyz`
-- Chain ID: `10143`
+- Chain ID: `143`
 - Symbol: `MON`
 
 ### Issue: "Insufficient allowance"

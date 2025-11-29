@@ -8,12 +8,12 @@
 // Supported chains
 const SUPPORTED_CHAINS = {
   monad: {
-    chainId: 10143,
+    chainId: 143,
     name: 'Monad Mainnet',
     rpcUrl: 'https://rpc.monad.xyz',
     rpcUrlBackup: 'https://rpc1.monad.xyz',
     tokenAddress: '0x22Cd99EC337a2811F594340a4A6E41e4A3022b07', // m00nad
-    contractAddress: '0x802C3a9953C4fcEC807eF1B464F7b15310C2396b', // MoonlanderGame
+    contractAddress: '0x399f080bB2868371D7a0024a28c92fc63C05536E', // MoonlanderGame (Enhanced)
     explorerUrl: 'https://monadvision.com'
   },
   ethereum: {
@@ -36,6 +36,12 @@ const CONFIG = {
   MOONLANDER_CONTRACT: SUPPORTED_CHAINS.monad.contractAddress,
   ENTRY_FEE: '100000',
 };
+
+console.log('Contract Integration Config:');
+console.log('  Chain ID:', CONFIG.CHAIN_ID);
+console.log('  Token Address:', CONFIG.M00NAD_TOKEN);
+console.log('  Game Contract:', CONFIG.MOONLANDER_CONTRACT);
+console.log('  RPC URL:', CONFIG.RPC_URL);
 
 // ERC20_ABI is loaded from moonlander-abi.js, use window.ERC20_ABI if available
 // This is kept as a fallback minimal ABI
@@ -155,10 +161,13 @@ async function initializeContractIntegration() {
   }
   
   try {
-    // Listen for account changes
+    // Listen for account changes and network changes
     if (window.ethereum.on) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('chainChanged', handleChainChanged);
+      window.ethereum.on('chainChanged', (chainId) => {
+        console.log(`Chain changed to: ${chainId} (decimal: ${parseInt(chainId, 16)})`);
+        handleChainChanged(chainId);
+      });
     }
     
     // First, try to restore saved wallet state
@@ -267,7 +276,7 @@ async function connectWallet() {
     
     if (network.chainId !== CONFIG.CHAIN_ID) {
       console.log(`Wrong chain (${network.chainId}). Attempting to switch to Monad (${CONFIG.CHAIN_ID})...`);
-      updateUIWithMessage('Switching to Monad mainnet...');
+      updateUIWithMessage(`Wrong network. Connected to chain ${network.chainId}, need Monad ${CONFIG.CHAIN_ID}. Switching...`);
       const switched = await switchToMonad();
       if (!switched) {
         updateUIForWrongChain();
@@ -297,7 +306,7 @@ async function switchToMonad() {
     }
 
     const chainIdHex = '0x' + CONFIG.CHAIN_ID.toString(16);
-    console.log(`Attempting to switch to chain: ${chainIdHex}`);
+    console.log(`Attempting to switch to Monad Mainnet, chain ID: ${CONFIG.CHAIN_ID} (${chainIdHex})`);
     
     try {
       // Try to switch to existing chain
@@ -306,25 +315,38 @@ async function switchToMonad() {
         params: [{ chainId: chainIdHex }],
       });
       console.log('Successfully switched to Monad mainnet');
+      
+      // Refresh provider after switch
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      ethersProvider = new ethers.providers.Web3Provider(window.ethereum);
+      ethersSigner = ethersProvider.getSigner();
+      
       return true;
     } catch (switchError) {
       console.error('Switch error code:', switchError.code, 'Message:', switchError.message);
       
       // Chain not added, try to add it
       if (switchError.code === 4902 || switchError.code === -32603) {
-        console.log('Chain not found, adding Monad mainnet...');
+        console.log('Chain not found, adding Monad Mainnet (143)...');
         try {
+          const chainIdHex143 = '0x8f'; // 143 in hex
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
-              chainId: chainIdHex,
+              chainId: chainIdHex143,
               chainName: 'Monad Mainnet',
               nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
-              rpcUrls: [CONFIG.RPC_URL],
-              blockExplorerUrls: [SUPPORTED_CHAINS.monad.explorerUrl],
+              rpcUrls: ['https://rpc.monad.xyz', 'https://rpc1.monad.xyz'],
+              blockExplorerUrls: ['https://monadvision.com', 'https://monadscan.com'],
             }],
           });
           console.log('Monad mainnet added and switched successfully');
+          
+          // Refresh provider after switch
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          ethersProvider = new ethers.providers.Web3Provider(window.ethereum);
+          ethersSigner = ethersProvider.getSigner();
+          
           return true;
         } catch (addError) {
           console.error('Failed to add Monad chain:', addError);
@@ -373,14 +395,28 @@ async function payAndPlayGame() {
   if (!currentAccount) {
     updateUIWithMessage('Wallet not connected');
     if (typeof window.ethereum === 'undefined') {
-      alert('Web3 wallet not found. Please install MetaMask or another wallet to play with payments.');
+      await showModal('Web3 wallet not found. Please install MetaMask or another wallet to play with payments.', 'No Wallet Found');
     } else {
-      alert('Please connect your wallet to pay and play');
+      await showModal('Please connect your wallet to pay and play.', 'Wallet Not Connected');
     }
     return false;
   }
   
   try {
+    // Verify we're on the right chain
+    const network = await ethersProvider.getNetwork();
+    console.log(`Current network for payAndPlayGame: ${network.chainId}, expected: ${CONFIG.CHAIN_ID}`);
+    
+    if (network.chainId !== CONFIG.CHAIN_ID) {
+      console.log('Wrong chain, attempting switch...');
+      updateUIWithMessage('Wrong network. Switching to Monad mainnet...');
+      const switched = await switchToMonad();
+      if (!switched) {
+        updateUIWithMessage('Please switch to Monad mainnet to play');
+        return false;
+      }
+    }
+    
     // Check balance first
     const balance = await getPlayerBalance(currentAccount);
     const entryFeeInWei = ethers.utils.parseUnits(
@@ -388,8 +424,11 @@ async function payAndPlayGame() {
       CONFIG.M00NAD_DECIMALS
     );
     
+    console.log(`Balance: ${ethers.utils.formatUnits(balance, CONFIG.M00NAD_DECIMALS)}, Required: ${CONFIG.ENTRY_FEE}`);
+    
     if (balance.lt(entryFeeInWei)) {
-      alert(`Insufficient balance. You need ${CONFIG.ENTRY_FEE} m00nad`);
+      const balanceFormatted = ethers.utils.formatUnits(balance, CONFIG.M00NAD_DECIMALS);
+      await showModal(`Insufficient balance. You need ${CONFIG.ENTRY_FEE} m00nad, you have ${balanceFormatted}.`, 'Low Balance');
       return false;
     }
     
@@ -420,6 +459,12 @@ async function payAndPlayGame() {
     console.log('Payment confirmed:', receipt);
     
     gameStarted = true;
+    updateUIWithMessage('Payment confirmed! Starting game...');
+    
+    // Redirect to game after short delay
+    setTimeout(() => {
+      window.location.href = 'index.html?paid=true';
+    }, 1500);
     
     return true;
   } catch (error) {
@@ -468,17 +513,17 @@ async function approveToken(amount) {
  */
 async function submitScore(score, landed) {
   if (!currentAccount || !gameStarted) {
-    alert('Please play the game first');
+    await showModal('Please play the game first to submit a score.', 'Game Not Started');
     return false;
   }
   
   if (!Number.isInteger(score) || score <= 0) {
-    alert('Invalid score');
+    await showModal('The score must be a valid positive number.', 'Invalid Score');
     return false;
   }
   
   if (landed !== 0 && landed !== 1) {
-    alert('Invalid landing status');
+    await showModal('Invalid landing status. Please try again.', 'Invalid Status');
     return false;
   }
   
@@ -509,8 +554,9 @@ async function submitScore(score, landed) {
     // Save score and redirect to leaderboard/results page
     localStorage.setItem('lastScore', score);
     localStorage.setItem('lastLanded', landed);
+    localStorage.setItem('lastSubmittedAt', Date.now());
     setTimeout(() => {
-      window.location.href = `leaderboard.html?score=${score}&landed=${landed}`;
+      window.location.href = `leaderboard.html?score=${score}&landed=${landed}&fresh=true`;
     }, 1500);
     
     return true;
@@ -590,13 +636,26 @@ async function getPlayerAllowance(address) {
        getERC20ABI(),
        ethersProvider
      );
-    
-    return await tokenContract.allowance(address, CONFIG.MOONLANDER_CONTRACT);
-  } catch (error) {
-    console.error('Failed to fetch allowance:', error);
-    return ethers.BigNumber.from(0);
-  }
-}
+     
+     console.log(`Checking allowance for ${address} on token ${CONFIG.M00NAD_TOKEN}`);
+     
+     // Check if contract exists at this address
+     const code = await ethersProvider.getCode(CONFIG.M00NAD_TOKEN);
+     if (code === '0x') {
+       console.warn('Token contract not found at', CONFIG.M00NAD_TOKEN);
+       return ethers.BigNumber.from(0);
+     }
+     
+     const allowance = await tokenContract.allowance(address, CONFIG.MOONLANDER_CONTRACT);
+     console.log(`Allowance: ${allowance.toString()}`);
+     return allowance;
+   } catch (error) {
+     console.error('Failed to fetch allowance:', error);
+     // If allowance check fails (e.g., contract not on this network), assume 0
+     console.warn('Assuming zero allowance due to error');
+     return ethers.BigNumber.from(0);
+   }
+ }
 
 /**
  * Get current entry fee from contract
@@ -750,6 +809,13 @@ async function updateBalanceDisplay() {
   
   try {
     console.log('Updating balance display...');
+    
+    // Show loading state immediately
+    const balanceText = document.getElementById('hudBalanceText');
+    if (balanceText) {
+      balanceText.innerHTML = '<span style="color: #999; font-size: 11px;">⏳ Loading...</span>';
+    }
+    
     const balance = await getPlayerBalance(currentAccount);
     
     if (!balance || balance.isZero()) {
@@ -759,9 +825,9 @@ async function updateBalanceDisplay() {
     const balanceFormatted = ethers.utils.formatUnits(balance, CONFIG.M00NAD_DECIMALS);
     const balanceNum = parseFloat(balanceFormatted);
     
-    const balanceText = document.getElementById('hudBalanceText');
-    if (balanceText) {
-      balanceText.textContent = `${balanceNum.toFixed(2)} m00nad`;
+    const balanceTextEl = document.getElementById('hudBalanceText');
+    if (balanceTextEl) {
+      balanceTextEl.textContent = `${balanceNum.toFixed(2)} m00nad`;
     }
     
     // Dispatch event for other pages (leaderboard)
@@ -770,6 +836,12 @@ async function updateBalanceDisplay() {
     }));
   } catch (error) {
     console.error('Failed to update balance:', error);
+    
+    // Show error state in UI
+    const balanceErrorEl = document.getElementById('hudBalanceText');
+    if (balanceErrorEl) {
+      balanceErrorEl.innerHTML = '<span style="color: #f44; font-size: 11px; cursor: pointer;" onclick="window.contractIntegration.updateBalanceDisplay()" title="Click to retry">⚠️ Error (click to retry)</span>';
+    }
   }
 }
 
@@ -784,6 +856,36 @@ function updateUIWithMessage(message) {
   }
 }
 
+// ============ Modal Dialog Utility ============
+
+/**
+ * Show a custom styled modal dialog
+ */
+function showModal(message, title = 'Alert', buttonText = 'OK') {
+  const backdrop = document.getElementById('modalBackdrop');
+  const titleEl = document.getElementById('modalTitle');
+  const messageEl = document.getElementById('modalMessage');
+  const buttonEl = document.getElementById('modalButton');
+  
+  if (!backdrop) {
+    // Fallback to alert if modal elements don't exist
+    alert(message);
+    return new Promise(resolve => resolve());
+  }
+  
+  titleEl.textContent = title;
+  messageEl.textContent = message;
+  buttonEl.textContent = buttonText;
+  backdrop.classList.add('active');
+  
+  return new Promise(resolve => {
+    buttonEl.onclick = () => {
+      backdrop.classList.remove('active');
+      resolve();
+    };
+  });
+}
+
 // ============ Export Functions ============
 
 // Make functions available globally for HTML onclick handlers
@@ -794,6 +896,7 @@ window.contractIntegration = {
   submitScore,
   getPlayerBalance,
   getPlayerAllowance,
+  updateBalanceDisplay,
   listenToScoreSubmittedEvents
 };
 

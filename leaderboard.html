@@ -7,6 +7,17 @@
   <link rel="stylesheet" href="leaderboard.css">
 </head>
 <body>
+  <!-- Modal Dialog -->
+  <div id="modalBackdrop" class="modal-backdrop">
+      <div class="modal-box">
+          <div id="modalTitle" class="modal-title"></div>
+          <div id="modalMessage" class="modal-message"></div>
+          <div class="modal-buttons">
+              <button id="modalButton" class="modal-button"></button>
+          </div>
+      </div>
+  </div>
+  
   <div class="stars"></div>
   <div class="stars-highlights"></div>
   <div class="planets">
@@ -85,13 +96,18 @@
   <div class="unified-container">
     <!-- Top Bar -->
     <div class="top-bar">
-      <h1 class="title">MOONLANDER</h1>
+      <h1 class="title">MOONLANDER 🚀</h1>
       <div class="wallet-section">
         <button id="menuConnectWallet" class="wallet-button">
           <span id="menuWalletStatus">CONNECT WALLET</span>
         </button>
         <div id="menuBalanceDisplay" class="balance-info" style="display: none;">
           <span id="menuBalanceText">0.0 m00nad</span>
+        </div>
+        
+        <!-- Wallet Menu Modal -->
+        <div id="walletMenu" class="wallet-menu" style="display: none;">
+          <button id="walletDisconnect" class="wallet-menu-item disconnect">DISCONNECT</button>
         </div>
       </div>
     </div>
@@ -100,11 +116,23 @@
     <div class="main-content">
       <!-- Unified Content -->
       <div id="mainContainer" class="content-section">
-        <!-- Score Display (hidden by default) -->
+        
+        <!-- Welcome/Instructions Section (shown on first visit) -->
+        <div id="welcomeSection" class="welcome-section" style="display: none;">
+          <!-- Completely minimal - users will figure it out -->
+        </div>
+
+        <!-- Score Display (shown after game) -->
         <div id="scoreSection" class="score-section" style="display: none;">
           <div class="final-score">
-            <span class="label">YOUR SCORE</span>
-            <span class="value" id="finalScore">0</span>
+            <div class="score-result">
+              <span class="label">YOUR SCORE</span>
+              <span class="value" id="finalScore">0</span>
+              <span class="landing-status" id="landingStatus"></span>
+            </div>
+            <div class="score-breakdown" id="scoreBreakdown" style="display: none;">
+              <small>🎯 Landing bonus • ⛽ Fuel bonus • 🎨 Style points</small>
+            </div>
           </div>
         </div>
         
@@ -120,6 +148,7 @@
   <!-- Action Buttons (floating above backdrop) -->
   <div id="actionButtons" class="floating-buttons">
     <button id="menuPlayBtn" class="action-button primary" style="display: none;">LFG 🚀</button>
+    <button id="submitScoreBtn" class="action-button primary" style="display: none;">SUBMIT SCORE</button>
     <button id="playAgain" class="action-button primary" style="display: none;">PLAY AGAIN 🚀</button>
     <button id="mainMenu" class="action-button secondary">MENU</button>
   </div>

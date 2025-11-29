@@ -7,6 +7,9 @@ window.onload = function() {
 		window.addEventListener('resize', onWindowResize);
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('keyup', onKeyUp);
+		
+		// ENHANCEMENT: Add mobile touch controls to existing system
+		initTouchControls();
 
 		document.addEventListener('visibilitychange', onLoseFocus);
 		
@@ -487,24 +490,15 @@ function endGame() {
     isPaused = true;
     lander.visible = false;
     
-    // Save score and redirect to leaderboard
+    // Save score to localStorage for later submission
     localStorage.setItem('lastScore', currentScore);
+    localStorage.setItem('lastLanded', hasLanded ? 1 : 0);
     
-    // Submit score to contract if wallet is connected
-    if (typeof window.contractIntegration !== 'undefined') {
-        const landed = hasLanded ? 1 : 0;
-        window.contractIntegration.submitScore(currentScore, landed)
-            .catch(err => console.error('Score submission failed:', err))
-            .finally(() => {
-                setTimeout(() => {
-                    window.location.href = `leaderboard.html?score=${currentScore}`;
-                }, 2000);
-            });
-    } else {
-        setTimeout(() => {
-            window.location.href = `leaderboard.html?score=${currentScore}`;
-        }, 2000);
-    }
+    // Redirect to leaderboard with score
+    // Mark as fresh so they can submit it
+    setTimeout(() => {
+        window.location.href = `leaderboard.html?score=${currentScore}&landed=${hasLanded ? 1 : 0}&fresh=true`;
+    }, 1500);
 }
 
 function nextRound() {
@@ -744,4 +738,81 @@ function updateParticles() {
     explosionPS.initialVelocityX = velocityX;
     explosionPS.initialVelocityY = velocityY;
     explosionPS.update(deltaTime);
+}
+
+// ENHANCEMENT: Mobile touch controls (consolidates with existing keyboard system)
+function initTouchControls() {
+    // Only show on mobile devices
+    if (window.innerWidth >= 768 && !('ontouchstart' in window)) return;
+    
+    // Create minimal touch overlay (reuses existing game state)
+    const touchUI = document.createElement('div');
+    touchUI.id = 'touchControls';
+    touchUI.innerHTML = `
+        <div class="touch-btn" data-action="left">◀</div>
+        <div class="touch-btn" data-action="thrust">▲</div>
+        <div class="touch-btn" data-action="right">▶</div>
+    `;
+    
+    // Minimal styling (performance-first)
+    touchUI.style.cssText = `
+        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+        display: flex; gap: 15px; z-index: 1000; pointer-events: auto;
+    `;
+    
+    document.body.appendChild(touchUI);
+    
+    // REUSE existing control logic - no duplication
+    const controls = {
+        left: () => { rotatingLeft = true; },
+        right: () => { rotatingRight = true; },
+        thrust: () => { accelerating = true; }
+    };
+    
+    const controlsStop = {
+        left: () => { rotatingLeft = false; },
+        right: () => { rotatingRight = false; },
+        thrust: () => { accelerating = false; }
+    };
+    
+    // Touch event handlers (consolidated)
+    touchUI.addEventListener('touchstart', handleTouchStart, { passive: false });
+    touchUI.addEventListener('touchend', handleTouchEnd, { passive: false });
+    touchUI.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+    
+    function handleTouchStart(e) {
+        e.preventDefault();
+        const action = e.target.dataset.action;
+        if (controls[action]) controls[action]();
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'scale(0.9)';
+    }
+    
+    function handleTouchEnd(e) {
+        e.preventDefault();
+        const action = e.target.dataset.action;
+        if (controlsStop[action]) controlsStop[action]();
+        e.target.style.opacity = '0.7';
+        e.target.style.transform = 'scale(1)';
+    }
+    
+    // Style touch buttons
+    document.querySelectorAll('.touch-btn').forEach(btn => {
+        btn.style.cssText = `
+            width: 60px; height: 60px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; opacity: 0.7; transition: all 0.1s;
+            user-select: none; touch-action: manipulation;
+        `;
+    });
+    
+    // ADAPTIVE: Hide on window resize to desktop
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768) {
+            touchUI.style.display = 'none';
+        } else {
+            touchUI.style.display = 'flex';
+        }
+    });
 }

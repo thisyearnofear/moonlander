@@ -95,7 +95,7 @@ Decimals: 18
 ### Monad Network
 ```
 RPC: https://rpc.monad.xyz
-Chain ID: 10143
+Chain ID: 143
 Block Explorer: https://monadvision.com
 ```
 
@@ -168,7 +168,7 @@ python3 -m http.server 8000
 → Add Monad to MetaMask
 - Network: Monad
 - RPC: https://rpc.monad.xyz
-- Chain ID: 10143
+- Chain ID: 143
 - Symbol: MON
 
 ### "Insufficient balance"

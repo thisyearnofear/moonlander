@@ -169,7 +169,7 @@ function submitScore(uint256 _score, uint256 _landed) external {
 ```javascript
 const CONFIG = {
   RPC_URL: 'https://rpc.monad.xyz',
-  CHAIN_ID: 10143,
+  CHAIN_ID: 143,
   M00NAD_TOKEN: '0x22cd99ec337a2811f594340a4a41e4a3022b07',
   M00NAD_DECIMALS: 18,
   MOONLANDER_CONTRACT: '0xYOUR_CONTRACT',
