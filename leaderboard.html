@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moonlander - Leaderboard</title>
+  <link rel="stylesheet" href="leaderboard.css">
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="stars-highlights"></div>
+  <div class="planets">
+    <div></div><div></div><div></div><div></div><div></div>
+  </div>
+  <div class="planets-2">
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+  </div>
+  <div class="startails">
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+  </div>
+  <div class="scene">
+    <div class="sun"></div>
+    <div class="planet"></div>
+    <div class="planet-2"></div>
+    <div class="planet-3"></div>
+    <div class="planet-4"></div>
+    <div class="planet-6"></div>
+    <div class="planet-5">
+      <div class="structure-1"></div>
+      <div class="structure-2"></div>
+      <div class="structure-3"></div>
+    </div>
+  </div>
+  
+  <!-- Menu Section -->
+  <div id="menuContainer" class="leaderboard-container menu-mode">
+    <h1>MOONLANDER</h1>
+    <div class="menu-section">
+      <button id="menuConnectWallet" class="play-button wallet-style">
+        <span id="menuWalletStatus">CONNECT WALLET</span>
+      </button>
+      <div id="menuBalanceDisplay" style="display: none; text-align: center; margin-top: 10px; color: #00ff00;">
+        <span id="menuBalanceText">0.0 m00nad</span>
+      </div>
+    </div>
+    <div class="menu-section">
+      <button id="menuPlayBtn" class="play-button" style="display: none;">LFG 🚀 (100k m00nad)</button>
+    </div>
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+      <button id="menuViewLeaderboard" class="play-button secondary">VIEW TOP PILOTS</button>
+    </div>
+  </div>
+
+  <!-- Results/Leaderboard Section -->
+  <div id="resultsContainer" class="leaderboard-container" style="display: none;">
+    <button id="toggleLeaderboard" class="toggle-button">×</button>
+    <h1>MISSION COMPLETE</h1>
+    <div class="score-display">
+      <div class="final-score">
+        <span class="label">YOUR SCORE</span>
+        <span class="value" id="finalScore">0</span>
+      </div>
+    </div>
+    <div class="leaderboard">
+      <h2>TOP PILOTS</h2>
+      <div id="leaderboardList"></div>
+    </div>
+    <div class="button-group">
+      <button id="mainMenu" class="play-button secondary">BACK TO MENU</button>
+      <button id="playAgain" class="play-button">TO THE MOON 🚀</button>
+    </div>
+  </div>
+  </div>
+
+  <div class="highlight"></div>
+  <div class="color-filter"></div>
+  <svg class="filter" xmlns="http://www.w3.org/2000/svg">
+    <filter id="stars">
+      <feTurbulence baseFrequency="0.275" />
+      <feColorMatrix values="0 0 0 9 -5
+                             0 0 0 9 -4
+                             0 0 0 9 -5
+                             0 0 0 0 1" />
+    </filter>
+    <filter id="stars-highlights">
+      <feTurbulence baseFrequency="0.675" />
+      <feColorMatrix values="0 0 0 9 -5
+                             0 0 0 9 -4
+                             0 0 0 9 -5
+                             0 0 0 0 1" />
+    </filter>
+    <filter id="planet-structure">
+      <feTurbulence baseFrequency="0.195" />
+      <feColorMatrix values="0 0 0 1 -9
+                             0 0 0 9 -1.5
+                             0 0 0 2 -6
+                             0 0 0 0 1" />
+    </filter>
+  </svg>
+
+  <script src="https://unpkg.com/ethers@5.6.9/dist/ethers.umd.min.js"></script>
+  <script src="js/moonlander-abi.js"></script>
+  <script src="js/contract-integration.js"></script>
+  <script src="js/leaderboard-events.js"></script>
+  <script src="leaderboard.js"></script>
+</body>
+</html>

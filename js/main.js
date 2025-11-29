@@ -1,12 +1,23 @@
 window.onload = function() {
-	init();
-    animate();
+	// Wait a tick to ensure Farcaster SDK initialization has started
+	setTimeout(() => {
+		init();
+		animate();
 
-    window.addEventListener('resize', onWindowResize);
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
+		window.addEventListener('resize', onWindowResize);
+		window.addEventListener('keydown', onKeyDown);
+		window.addEventListener('keyup', onKeyUp);
 
-    document.addEventListener('visibilitychange', onLoseFocus);
+		document.addEventListener('visibilitychange', onLoseFocus);
+		
+		// Signal Farcaster SDK that app is ready (hides splash screen)
+		// This is safe even if SDK isn't available
+		if (window.farcasterSDK && window.farcasterSDK.actions) {
+			window.farcasterSDK.actions.ready().catch(err => {
+				console.log('Running without Farcaster context');
+			});
+		}
+	}, 0);
 }
 
 function onLoseFocus() {
@@ -475,6 +486,25 @@ function endGame() {
     isGameOver = true;
     isPaused = true;
     lander.visible = false;
+    
+    // Save score and redirect to leaderboard
+    localStorage.setItem('lastScore', currentScore);
+    
+    // Submit score to contract if wallet is connected
+    if (typeof window.contractIntegration !== 'undefined') {
+        const landed = hasLanded ? 1 : 0;
+        window.contractIntegration.submitScore(currentScore, landed)
+            .catch(err => console.error('Score submission failed:', err))
+            .finally(() => {
+                setTimeout(() => {
+                    window.location.href = `leaderboard.html?score=${currentScore}`;
+                }, 2000);
+            });
+    } else {
+        setTimeout(() => {
+            window.location.href = `leaderboard.html?score=${currentScore}`;
+        }, 2000);
+    }
 }
 
 function nextRound() {

@@ -1,0 +1,38 @@
+{
+  "accountAssociation": {
+    "header": {
+      "type": "custody",
+      "key": "YOUR_FARCASTER_SIGNER_PUBLIC_KEY"
+    },
+    "payload": {
+      "domain": "moonlander-game.example.com"
+    },
+    "signature": "YOUR_SIGNATURE_HERE"
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "Lunar Lander",
+    "homeUrl": "https://moonlander-game.example.com",
+    "iconUrl": "https://moonlander-game.example.com/images/icon-1024.png",
+    "splashImageUrl": "https://moonlander-game.example.com/images/splash-icon.png",
+    "splashBackgroundColor": "#000000",
+    "subtitle": "Land safely on the moon",
+    "description": "A classic lunar lander game with challenging terrain, fuel management, and dynamic scoring. Navigate your spacecraft to smooth landing zones before running out of fuel.",
+    "primaryCategory": "games",
+    "tags": ["game", "arcade", "skill", "lunar", "classic"],
+    "heroImageUrl": "https://moonlander-game.example.com/images/hero-1200x630.png",
+    "ogTitle": "Lunar Lander",
+    "ogDescription": "Play the classic Lunar Lander game on Farcaster. Navigate treacherous terrain with limited fuel.",
+    "ogImageUrl": "https://moonlander-game.example.com/images/og-1200x630.png",
+    "screenshotUrls": [
+      "https://moonlander-game.example.com/images/screenshot-1-1284x2778.png",
+      "https://moonlander-game.example.com/images/screenshot-2-1284x2778.png",
+      "https://moonlander-game.example.com/images/screenshot-3-1284x2778.png"
+    ],
+    "webhookUrl": "https://moonlander-game.example.com/api/webhook",
+    "requiredCapabilities": [
+      "actions.composeCast",
+      "actions.addMiniApp"
+    ]
+  }
+}

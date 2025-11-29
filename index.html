@@ -6,15 +6,125 @@
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
         <title>Lunar Lander</title>
         <link type="text/css" rel="stylesheet" href="css/main.css">
+        <!-- Farcaster Mini App meta tags -->
+        <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://moonlander-game.example.com/images/og-image.jpg","button":{"title":"🚀 Play","action":{"type":"launch_frame","name":"Lunar Lander","url":"https://moonlander-game.example.com","splashImageUrl":"https://moonlander-game.example.com/images/splash-icon.png","splashBackgroundColor":"#000000"}}}'>
     </head>
     <body>
+        <!-- Status message -->
+        <div id="statusMessage" style="position: absolute; top: 50px; left: 50%; transform: translateX(-50%); z-index: 100; background: rgba(0,0,0,0.7); color: #fff; padding: 8px 12px; border-radius: 4px; font-size: 11px; max-width: 250px; word-wrap: break-word; display: none; text-align: center;"></div>
+        
+        <!-- In-game HUD -->
+        <div id="inGameHUD" class="in-game-hud">
+            <div class="hud-center">
+                <button id="quitGameBtn" class="hud-button">MENU</button>
+                <button id="hudConnectWalletBtn" class="hud-button wallet-button">CONNECT WALLET</button>
+                <div id="hudWalletInfo" class="hud-wallet-info hidden">
+                    <span id="hudWalletAddress"></span>
+                    <span id="hudBalanceText" class="hud-balance">0.0 m00nad</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Load libraries first -->
         <script src="https://unpkg.com/three@0.124.0"></script>
+        <script src="https://unpkg.com/ethers@5.6.9/dist/ethers.umd.min.js"></script>
+        
+        <!-- Then game scripts -->
         <script src="js/constants.js"></script>
         <script src="js/globals.js"></script>
         <script src="js/terrainData.js"></script>
         <script src="js/sound.js"></script>
         <script src="js/hud.js"></script>
         <script src="js/particles.js"></script>
+        <script src="js/moonlander-abi.js"></script>
+        
+        <!-- Contract integration before main -->
+        <script src="js/contract-integration.js"></script>
         <script src="js/main.js"></script>
+        
+        <!-- Farcaster SDK (doesn't need to be first) -->
+        <script type="module">
+            // Farcaster Mini App SDK integration
+            import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
+            
+            window.farcasterSDK = sdk;
+            
+            // Expose SDK to global scope for mini app lifecycle
+            window.sdkReady = (async () => {
+                try {
+                    // SDK will be available after async initialization
+                    return sdk;
+                } catch (error) {
+                    console.warn('Farcaster SDK not available:', error);
+                    return null;
+                }
+            })();
+        </script>
+        <script src="js/farcaster-integration.js"></script>
+        <script>
+            // Setup HUD button listeners after everything loads
+            function setupHUDListeners() {
+                console.log('Setting up HUD listeners...');
+                
+                // Quit game button goes back to leaderboard/menu
+                const quitBtn = document.getElementById('quitGameBtn');
+                if (quitBtn) {
+                    console.log('Attaching quit button listener');
+                    quitBtn.addEventListener('click', () => {
+                        console.log('Quit clicked');
+                        window.location.href = 'leaderboard.html';
+                    });
+                }
+                
+                // Wallet connect button
+                const connectWalletBtn = document.getElementById('hudConnectWalletBtn');
+                console.log('Connect wallet button found:', !!connectWalletBtn);
+                console.log('window.contractIntegration available:', !!window.contractIntegration);
+                
+                if (connectWalletBtn) {
+                    connectWalletBtn.addEventListener('click', async (e) => {
+                        console.log('Connect wallet clicked, e:', e);
+                        console.log('contractIntegration:', window.contractIntegration);
+                        
+                        if (window.contractIntegration && window.contractIntegration.connectWallet) {
+                            console.log('Calling connectWallet...');
+                            await window.contractIntegration.connectWallet();
+                        } else {
+                            console.error('connectWallet not available');
+                        }
+                    });
+                    console.log('Attached connect wallet listener');
+                }
+            }
+            
+            // Wait for contract integration to be ready before setting up listeners
+            async function waitForContractIntegration(maxWait = 5000) {
+                const startTime = Date.now();
+                while (!window.contractIntegration) {
+                    if (Date.now() - startTime > maxWait) {
+                        console.error('Contract integration failed to load');
+                        return false;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+                console.log('Contract integration ready');
+                return true;
+            }
+            
+            // Run after scripts load and contract integration is ready
+            console.log('Document ready state:', document.readyState);
+            async function initHUD() {
+                await waitForContractIntegration();
+                setupHUDListeners();
+            }
+            
+            if (document.readyState === 'loading') {
+                console.log('Waiting for DOMContentLoaded...');
+                document.addEventListener('DOMContentLoaded', initHUD);
+            } else {
+                console.log('Running initHUD immediately');
+                initHUD();
+            }
+        </script>
     </body>
 </html>

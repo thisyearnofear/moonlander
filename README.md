@@ -1,5 +1,15 @@
 # Moonlander [[play here](https://tblazevic.github.io/moonlander)]
 
+## 🚀 On-Chain Gaming on Monad
+
+This implementation features **full blockchain integration** with on-chain payments and immutable leaderboard:
+
+- 🎮 **Play-to-contribute**: Pay 100k m00nad per game
+- 🔥 **Auto-burning**: 80% of payments permanently burned  
+- 📈 **Platform revenue**: 20% to developers via 0xSplits
+- 🏆 **On-chain leaderboard**: Scores stored as blockchain events
+- 🔐 **No backend needed**: Everything runs on-chain
+
 ## Gameplay
 
 This game was inspired by [Lunar Lander](https://en.wikipedia.org/wiki/Lunar_Lander_(1979_video_game)).  
@@ -81,3 +91,49 @@ There are 4 sounds in the game:
 * `morse.mp3` - randomly played every x seconds
 * `alarm.mp3` - played every x seconds once the next crash means game over
 * `rocket.mp3` - looped while using thrusters
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the `/docs` directory:
+
+### Quick Reference
+- **[GETTING_STARTED.md](docs/GETTING_STARTED.md)** - 5-step quick start, basic setup, overview
+- **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Detailed deployment instructions for Farcaster + Monad
+- **[TECHNICAL_DETAILS.md](docs/TECHNICAL_DETAILS.md)** - Architecture, smart contracts, security model
+
+### Ready-to-Deploy Files
+- **`contracts/MoonlanderGame.sol`** - Smart contract (180 lines)
+- **`js/contract-integration.js`** - Frontend blockchain integration (600 lines)
+- **`js/contract-abis.js`** - Contract ABIs and utilities (250 lines)
+
+### What You'll Get
+✅ **Complete on-chain gaming platform**  
+✅ **< 2 hours to launch**  
+✅ **< $1 in gas costs**  
+✅ **Audited smart contracts** (0xSplits)  
+✅ **No backend required**  
+
+### Start Here
+1. Read **[GETTING_STARTED.md](docs/GETTING_STARTED.md)** for the 30-second overview
+2. Follow **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** for step-by-step instructions
+3. Understand the tech in **[TECHNICAL_DETAILS.md](docs/TECHNICAL_DETAILS.md)**
+
+---
+
+## ⚡ Quick Deploy
+
+Deploy on-chain in 5 steps (~40 minutes):
+
+```bash
+# 1. Deploy 0xSplits (split.new) - 5 min
+# 2. Deploy contract (Remix) - 15 min  
+# 3. Update config - 10 min
+# 4. Test locally - 20 min
+# 5. Deploy to Vercel - 10 min
+```
+
+**Total**: ~1 hour | **Cost**: < $1
+
+---
+
+*For complete implementation guide, see [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)*
