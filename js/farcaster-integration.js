@@ -1,5 +1,5 @@
 /**
- * Farcaster Mini App Integration for Lunar Lander
+ * Farcaster Mini App Integration for m00nlander
  * Handles SDK initialization, splash screen, and game state notifications
  */
 
@@ -31,7 +31,7 @@ async function initFarcasterSDK() {
         // Signal that the app is ready to display
         // This hides the splash screen
         await sdk.actions.ready();
-        console.log('Lunar Lander mini app ready');
+        console.log('m00nlander mini app ready');
         
         isInitializing = false;
     } catch (error) {
@@ -53,7 +53,7 @@ async function shareScoreToFarcaster(score, landings = 0) {
             return;
         }
         
-        const message = `🚀 I scored ${score} points in Lunar Lander! Made ${landings} landings before running out of fuel. Can you beat my score?\n\nhttps://moonlander-game.example.com`;
+        const message = `🚀 I scored ${score} points in m00nlander! Made ${landings} landings before running out of fuel. Can you beat my score?\n\nhttps://moonlander-game.example.com`;
         
         // Prompt user to compose a cast with their score
         await sdk.actions.composeCast({
