@@ -21,8 +21,8 @@
     Content-Type = "application/json"
     Cache-Control = "public, max-age=3600"
 
-# Redirect all non-file routes to index.html for SPA routing
+# Redirect root to leaderboard (entry point)
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from = "/"
+  to = "/leaderboard.html"
   status = 200
