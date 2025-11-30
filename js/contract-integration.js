@@ -246,26 +246,28 @@ async function connectWallet(maxRetries = 2) {
   connectionPromise = (async () => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Connection attempt ${attempt}/${maxRetries}`);
-        connectionState = ConnectionState.CONNECTING;
+         console.log(`Connection attempt ${attempt}/${maxRetries}`);
+         connectionState = ConnectionState.CONNECTING;
 
-        // Get wallet provider
-        const provider = await getWalletProvider();
-        console.log('Got provider from getWalletProvider():', provider);
-        console.log('Provider type:', typeof provider);
-        console.log('Provider.request:', typeof provider?.request);
-        
-        if (!provider) {
-          throw new Error('No compatible wallet found. Please install MetaMask or Coinbase Wallet.');
-        }
+         // Get wallet provider
+         const provider = await getWalletProvider();
+         console.log('✓ Got provider from getWalletProvider():', provider);
+         console.log('  Provider type:', typeof provider);
+         console.log('  Provider has request?:', typeof provider?.request);
+         
+         if (!provider) {
+           throw new Error('No compatible wallet found. Please install MetaMask or Coinbase Wallet.');
+         }
 
-        // Request accounts with timeout
-        const accountsPromise = provider.request({ method: 'eth_requestAccounts' });
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Wallet request timeout')), 30000)
-        );
+         // Request accounts with timeout - this will prompt user to approve
+         console.log('  Requesting accounts from wallet...');
+         const accountsPromise = provider.request({ method: 'eth_requestAccounts' });
+         const timeoutPromise = new Promise((_, reject) =>
+           setTimeout(() => reject(new Error('Wallet request timeout')), 30000)
+         );
 
-        const accounts = await Promise.race([accountsPromise, timeoutPromise]);
+         const accounts = await Promise.race([accountsPromise, timeoutPromise]);
+         console.log('  Got accounts:', accounts);
 
         if (!accounts || accounts.length === 0) {
           throw new Error('No accounts returned from wallet');
