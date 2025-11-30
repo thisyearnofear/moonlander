@@ -172,7 +172,19 @@ async function initializeContractIntegration() {
  */
 async function getWalletProvider() {
   // Check if we're actually in Farcaster mini app
-  const isInFarcaster = window.farcasterSDK && typeof window.farcasterSDK.isInMiniApp === 'function' && window.farcasterSDK.isInMiniApp();
+  // Only consider Farcaster provider if window.ethereum is NOT available (true mini app environment)
+  let isInFarcaster = false;
+  
+  try {
+    isInFarcaster = window.farcasterSDK && 
+                    typeof window.farcasterSDK.isInMiniApp === 'function' && 
+                    window.farcasterSDK.isInMiniApp() &&
+                    !window.ethereum; // Mini app environment doesn't have window.ethereum
+  } catch (e) {
+    console.warn('Could not check Farcaster mini app status:', e);
+  }
+  
+  console.log('Checking provider context:', { isInFarcaster, hasEthereum: !!window.ethereum, hasFarcasterSDK: !!window.farcasterSDK });
   
   // Only use cached Farcaster provider if we're in Farcaster context
   if (isInFarcaster && cachedFarcasterProvider) {
@@ -278,37 +290,63 @@ async function connectWallet(maxRetries = 2) {
 
          // Request accounts with timeout - this will prompt user to approve
          console.log('  Requesting accounts from wallet...');
-         const accountsPromise = provider.request({ method: 'eth_requestAccounts' });
-         const timeoutPromise = new Promise((_, reject) =>
-           setTimeout(() => reject(new Error('Wallet request timeout')), 30000)
-         );
+         
+         let accounts;
+         try {
+           const accountsPromise = provider.request({ method: 'eth_requestAccounts' });
+           const timeoutPromise = new Promise((_, reject) =>
+             setTimeout(() => reject(new Error('Wallet request timeout')), 30000)
+           );
 
-         const accounts = await Promise.race([accountsPromise, timeoutPromise]);
+           accounts = await Promise.race([accountsPromise, timeoutPromise]);
+         } catch (requestError) {
+           // Handle RPC errors from Farcaster provider
+           console.error('Provider request error:', requestError);
+           
+           // Extract error code if available
+           let errorCode = null;
+           let errorMessage = requestError.message || 'Unknown error';
+           
+           // Try multiple ways to get error code
+           if (requestError.code) {
+             errorCode = requestError.code;
+           } else if (requestError.error?.code) {
+             errorCode = requestError.error.code;
+           } else if (requestError.data?.code) {
+             errorCode = requestError.data.code;
+           }
+           
+           // Throw with extracted error info
+           const err = new Error(errorMessage);
+           err.code = errorCode || -32000;
+           throw err;
+         }
+         
          console.log('  Got accounts:', accounts);
 
-        if (!accounts || accounts.length === 0) {
+         if (!accounts || accounts.length === 0) {
           throw new Error('No accounts returned from wallet');
-        }
+         }
 
-        await handleWalletConnected(accounts[0]);
-        return true;
+         await handleWalletConnected(accounts[0]);
+         return true;
 
-      } catch (error) {
-        console.error(`Connection attempt ${attempt} failed:`, error);
+         } catch (error) {
+         console.error(`Connection attempt ${attempt} failed:`, error);
 
-        // User rejection - don't retry
-        if (error.code === 4001) {
+         // User rejection - don't retry
+         if (error.code === 4001 || error.message?.includes('rejected')) {
           connectionState = ConnectionState.DISCONNECTED;
           updateUIWithMessage('Connection cancelled');
           return false;
-        }
+         }
 
-        // Wallet disconnected error
-        if (error.code === 4900 || error.message?.includes('disconnected')) {
+         // Wallet disconnected error
+         if (error.code === 4900 || error.message?.includes('disconnected')) {
           connectionState = ConnectionState.ERROR;
           updateUIWithMessage('Wallet disconnected. Please reload the page.');
           return false;
-        }
+         }
 
         // Last attempt failed
         if (attempt === maxRetries) {
