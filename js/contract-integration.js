@@ -3,22 +3,28 @@
  * Handles wallet connection, payments, and score submission
  * 
  * ENHANCED with reliability patterns:
+ * - Unified provider abstraction for Farcaster + Web3 wallets
  * - Connection state machine
  * - Retry logic with exponential backoff
- * - Health monitoring
+ * - Network switching support
  * - Proper event cleanup
  */
+
+// Import wallet provider abstraction (note: will be loaded via script tag in HTML)
+// The WalletProviderManager will be available via window._walletProviderModule
 
 // ============ Configuration ============
 
 const CONFIG = {
   CHAIN_ID: 143, // Monad Mainnet
+  CHAIN_ID_HEX: '0x8f',
   M00NAD_TOKEN: '0x22Cd99EC337a2811F594340a4A6E41e4A3022b07',
   M00NAD_DECIMALS: 18,
   MOONLANDER_CONTRACT: '0x399f080bB2868371D7a0024a28c92fc63C05536E',
   ENTRY_FEE: '100000',
   RPC_URL: 'https://rpc.monad.xyz',
-  RPC_URL_BACKUP: 'https://rpc1.monad.xyz'
+  RPC_URL_BACKUP: 'https://rpc1.monad.xyz',
+  NETWORK_NAME: 'Monad Mainnet'
 };
 
 console.log('Contract Integration Config:', CONFIG);
@@ -29,10 +35,12 @@ const ConnectionState = {
   DISCONNECTED: 'disconnected',
   CONNECTING: 'connecting',
   CONNECTED: 'connected',
+  WRONG_NETWORK: 'wrong_network',
   RECONNECTING: 'reconnecting',
   ERROR: 'error'
 };
 
+let walletManager = null; // WalletProviderManager instance
 let currentAccount = null;
 let ethersProvider = null;
 let ethersSigner = null;
@@ -40,8 +48,6 @@ let gameStarted = false;
 let connectionState = ConnectionState.DISCONNECTED;
 let connectionPromise = null;
 let healthCheckInterval = null;
-let cachedFarcasterProvider = null;
-let farcasterProviderPromise = null;
 
 // Event listener references for cleanup
 let accountsChangedHandler = null;
@@ -65,6 +71,17 @@ async function waitForLibraries(maxWait = 10000) {
   }
 
   console.log('✓ ethers.js loaded');
+
+  // Wait for wallet provider manager
+  while (!window._walletProviderModule) {
+    if (Date.now() - startTime > maxWait) {
+      console.error('Wallet provider module did not load in time');
+      return false;
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  console.log('✓ Wallet provider module loaded');
   return true;
 }
 
@@ -81,31 +98,22 @@ async function initializeContractIntegration() {
     return;
   }
 
-  // Check if in Farcaster mini app environment
-  // Use isInMiniApp() if available, otherwise fall back to SDK check
-  let inFarcasterMiniApp = false;
   try {
-    if (window.farcasterSDK && typeof window.farcasterSDK.isInMiniApp === 'function') {
-      inFarcasterMiniApp = window.farcasterSDK.isInMiniApp();
-      console.log('Farcaster isInMiniApp():', inFarcasterMiniApp);
+    // Initialize wallet manager
+    const { WalletProviderManager, NETWORKS } = window._walletProviderModule;
+    walletManager = new WalletProviderManager();
+    console.log('✓ Wallet manager initialized');
+
+    // Detect provider
+    const provider = await walletManager.detectProvider();
+
+    if (!provider) {
+      console.warn('No Web3 wallet detected - running in read-only mode');
+      updateUIForNoWallet();
+      return;
     }
-  } catch (e) {
-    console.log('Could not check isInMiniApp():', e);
-  }
-  
-  if (inFarcasterMiniApp) {
-    console.log('Detected Farcaster mini app environment - will auto-connect wallet');
-  }
 
-  // Check if wallet is available
-  if (typeof window.ethereum === 'undefined' && !inFarcasterMiniApp) {
-    console.warn('No Web3 wallet detected - running in read-only mode');
-    updateUIForNoWallet();
-    return;
-  }
-
-  try {
-    console.log('Wallet provider detected');
+    console.log('✓ Wallet provider detected:', walletManager.getInfo());
 
     // Setup event listeners
     attachWalletEventListeners();
@@ -115,15 +123,12 @@ async function initializeContractIntegration() {
     if (savedAccount) {
       console.log('Attempting to restore wallet connection for:', savedAccount);
       try {
-        const provider = await getWalletProvider();
-        if (provider) {
-          const accounts = await provider.request({ method: 'eth_accounts' });
+        const accounts = await walletManager.getAccounts();
 
-          if (accounts && accounts.includes(savedAccount)) {
-            console.log('Restoring wallet connection...');
-            await handleWalletConnected(accounts[0]);
-            return;
-          }
+        if (accounts && accounts.includes(savedAccount)) {
+          console.log('Restoring wallet connection...');
+          await handleWalletConnected(accounts[0]);
+          return;
         }
       } catch (err) {
         console.warn('Could not restore connection:', err);
@@ -131,7 +136,8 @@ async function initializeContractIntegration() {
     }
 
     // In Farcaster mini app, auto-connect if no saved connection
-    if (inFarcasterMiniApp) {
+    const inFarcaster = await walletManager.isInFarcasterMiniApp();
+    if (inFarcaster) {
       console.log('Auto-connecting to Farcaster wallet...');
       await connectWallet();
       return;
@@ -139,13 +145,7 @@ async function initializeContractIntegration() {
 
     // Check if already connected
     try {
-      const provider = await getWalletProvider();
-      if (!provider) {
-        updateUIForNoWallet();
-        return;
-      }
-
-      const accounts = await provider.request({ method: 'eth_accounts' });
+      const accounts = await walletManager.getAccounts();
 
       if (accounts && accounts.length > 0) {
         await handleWalletConnected(accounts[0]);
@@ -166,110 +166,7 @@ async function initializeContractIntegration() {
 // ============ Wallet Connection with Retry Logic ============
 
 /**
- * Get the best available wallet provider
- * Prioritizes Farcaster wallet when in mini app, then filters out problematic wallets
- * Returns a Promise that resolves to the provider
- */
-async function getWalletProvider() {
-  // Check if we're actually in Farcaster mini app
-  let isInFarcaster = false;
-  
-  try {
-    isInFarcaster = window.farcasterSDK && 
-                    typeof window.farcasterSDK.isInMiniApp === 'function' && 
-                    window.farcasterSDK.isInMiniApp();
-  } catch (e) {
-    console.warn('Could not check Farcaster mini app status:', e);
-  }
-  
-  console.log('Checking provider context:', { isInFarcaster, hasEthereum: !!window.ethereum, hasFarcasterSDK: !!window.farcasterSDK });
-  
-  // Only use cached Farcaster provider if we're in Farcaster context
-  if (isInFarcaster && cachedFarcasterProvider) {
-    console.log('Using cached Farcaster provider');
-    return cachedFarcasterProvider;
-  }
-
-  // Check for Farcaster wallet first (ONLY when actually running in Farcaster mini app)
-  if (isInFarcaster && window.farcasterSDK && window.farcasterSDK.wallet) {
-    console.log('Running in Farcaster mini app, trying to get wallet provider...');
-    
-    try {
-      // getEthereumProvider() returns a Promise, await it
-      console.log('Calling getEthereumProvider()...');
-      const getProviderPromise = window.farcasterSDK.wallet.getEthereumProvider();
-      console.log('Got promise:', getProviderPromise);
-      
-      const farcasterProvider = await getProviderPromise;
-      console.log('Provider resolved:', farcasterProvider);
-      console.log('Provider type:', typeof farcasterProvider);
-      console.log('Provider has request?:', typeof farcasterProvider?.request);
-      
-      if (farcasterProvider && typeof farcasterProvider.request === 'function') {
-        console.log('✓ Using Farcaster wallet provider');
-        cachedFarcasterProvider = farcasterProvider;
-        return farcasterProvider;
-      } else {
-        console.warn('✗ Farcaster provider invalid. Has request method?:', typeof farcasterProvider?.request);
-        return null;
-      }
-    } catch (error) {
-      console.warn('Could not get Farcaster wallet provider:', error);
-      return null;
-    }
-  } else if (!isInFarcaster && window.farcasterSDK) {
-    console.log('Farcaster SDK available but NOT in mini app - skipping Farcaster provider');
-    // Clear cache if we're not in Farcaster
-    cachedFarcasterProvider = null;
-  }
-
-  if (!window.ethereum) return null;
-
-  // Handle multiple providers
-  if (window.ethereum.providers && Array.isArray(window.ethereum.providers)) {
-    console.log(`Found ${window.ethereum.providers.length} wallet providers`);
-
-    // Filter out problematic wallets
-    const validProviders = window.ethereum.providers.filter(p =>
-      !p.isPort && !p.isBackpack
-    );
-
-    if (validProviders.length === 0) {
-      console.warn('No valid wallet providers found');
-      return null;
-    }
-
-    // Prefer MetaMask
-    const metamask = validProviders.find(p => p.isMetaMask);
-    if (metamask) {
-      console.log('Using MetaMask');
-      return metamask;
-    }
-
-    // Prefer Coinbase
-    const coinbase = validProviders.find(p => p.isCoinbaseWallet);
-    if (coinbase) {
-      console.log('Using Coinbase Wallet');
-      return coinbase;
-    }
-
-    // Use first valid provider
-    console.log('Using first available provider');
-    return validProviders[0];
-  }
-
-  // Single provider - check if it's valid
-  if (window.ethereum.isPort || window.ethereum.isBackpack) {
-    console.warn('Port/Backpack wallet detected - not supported');
-    return null;
-  }
-
-  console.log('Using window.ethereum directly');
-  return window.ethereum;
-}
-
-/**
- * Connect wallet with retry logic
+ * Connect wallet with retry logic and network verification
  */
 async function connectWallet(maxRetries = 2) {
   // Prevent concurrent connection attempts
@@ -279,85 +176,97 @@ async function connectWallet(maxRetries = 2) {
   }
 
   connectionPromise = (async () => {
+    if (!walletManager) {
+      console.error('Wallet manager not initialized');
+      return false;
+    }
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-         console.log(`Connection attempt ${attempt}/${maxRetries}`);
-         connectionState = ConnectionState.CONNECTING;
+        console.log(`Connection attempt ${attempt}/${maxRetries}`);
+        connectionState = ConnectionState.CONNECTING;
 
-         // Get wallet provider
-         const provider = await getWalletProvider();
-         console.log('✓ Got provider from getWalletProvider():', provider);
-         console.log('  Provider type:', typeof provider);
-         console.log('  Provider has request?:', typeof provider?.request);
-         
-         if (!provider) {
-           throw new Error('No compatible wallet found. Please install MetaMask or Coinbase Wallet.');
-         }
+        // Request accounts - this will prompt user if needed
+        let accounts;
+        try {
+          accounts = await walletManager.requestAccounts();
+          console.log('  ✓ Accounts received:', accounts);
+        } catch (requestError) {
+          // Handled using normalized error
+          const normalizedError = requestError;
+          console.error('  ✗ Account request failed:', normalizedError);
 
-         // Request accounts with timeout - this will prompt user to approve
-         console.log('  Requesting accounts from wallet...');
-         
-         let accounts;
-         try {
-           const accountsPromise = provider.request({ method: 'eth_requestAccounts' });
-           const timeoutPromise = new Promise((_, reject) =>
-             setTimeout(() => reject(new Error('Wallet request timeout')), 30000)
-           );
+          //User rejection - don't retry
+          if (normalizedError.code === 4001) {
+            connectionState = ConnectionState.DISCONNECTED;
+            updateUIWithMessage('Connection cancelled');
+            return false;
+          }
 
-           accounts = await Promise.race([accountsPromise, timeoutPromise]);
-         } catch (requestError) {
-           // Handle RPC errors from Farcaster provider
-           console.error('Provider request error:', requestError);
-           
-           // Extract error code if available
-           let errorCode = null;
-           let errorMessage = requestError.message || 'Unknown error';
-           
-           // Try multiple ways to get error code
-           if (requestError.code) {
-             errorCode = requestError.code;
-           } else if (requestError.error?.code) {
-             errorCode = requestError.error.code;
-           } else if (requestError.data?.code) {
-             errorCode = requestError.data.code;
-           }
-           
-           // Throw with extracted error info
-           const err = new Error(errorMessage);
-           err.code = errorCode || -32000;
-           throw err;
-         }
-         
-         console.log('  Got accounts:', accounts);
+          // Wallet disconnected error
+          if (normalizedError.code === 4900) {
+            connectionState = ConnectionState.ERROR;
+            updateUIWithMessage('Wallet disconnected. Please reload the page.');
+            return false;
+          }
 
-         if (!accounts || accounts.length === 0) {
+          throw normalizedError;
+        }
+
+        if (!accounts || accounts.length === 0) {
           throw new Error('No accounts returned from wallet');
-         }
+        }
 
-         await handleWalletConnected(accounts[0]);
-         return true;
+        // Verify/switch network before completing connection
+        try {
+          const { NETWORKS } = window._walletProviderModule;
+          const currentChainId = await walletManager.getChainId();
+          console.log(`  Current chain: ${currentChainId}, Required: ${CONFIG.CHAIN_ID}`);
 
-         } catch (error) {
-         console.error(`Connection attempt ${attempt} failed:`, error);
+          if (currentChainId !== CONFIG.CHAIN_ID) {
+            console.log('  ⚠️  Wrong network detected, attempting to switch...');
+            updateUIWithMessage(`Switching to ${CONFIG.NETWORK_NAME}...`);
 
-         // User rejection - don't retry
-         if (error.code === 4001 || error.message?.includes('rejected')) {
-          connectionState = ConnectionState.DISCONNECTED;
-          updateUIWithMessage('Connection cancelled');
+            try {
+              await walletManager.switchNetwork(NETWORKS.MONAD_MAINNET);
+              console.log('  ✓ Network switched successfully');
+            } catch (switchError) {
+              console.error('  ✗ Network switch failed:', switchError);
+
+              // Show helpful message to user
+              if (switchError.code === 4001) {
+                updateUIWithMessage('Network switch cancelled');
+                connectionState = ConnectionState.DISCONNECTED;
+                return false;
+              } else {
+                updateUIWithMessage(`Please switch to ${CONFIG.NETWORK_NAME} manually`);
+                connectionState = ConnectionState.WRONG_NETWORK;
+                updateUIForWrongChain();
+                return false;
+              }
+            }
+          }
+        } catch (networkError) {
+          console.error('  ✗ Network verification failed:', networkError);
+          // Continue with connection but mark as wrong network
+          connectionState = ConnectionState.WRONG_NETWORK;
+          await handleWalletConnected(accounts[0]);
+          updateUIForWrongChain();
           return false;
-         }
+        }
 
-         // Wallet disconnected error
-         if (error.code === 4900 || error.message?.includes('disconnected')) {
-          connectionState = ConnectionState.ERROR;
-          updateUIWithMessage('Wallet disconnected. Please reload the page.');
-          return false;
-         }
+        // Connection successful!
+        await handleWalletConnected(accounts[0]);
+        return true;
+
+      } catch (error) {
+        console.error(`Connection attempt ${attempt} failed:`, error);
 
         // Last attempt failed
         if (attempt === maxRetries) {
           connectionState = ConnectionState.ERROR;
-          updateUIWithMessage(`Connection failed: ${error.message}`);
+          const errorMsg = error.message || 'Unknown error';
+          updateUIWithMessage(`Connection failed: ${errorMsg}`);
           return false;
         }
 
@@ -383,24 +292,23 @@ async function handleWalletConnected(account) {
   try {
     console.log('Setting up wallet connection for:', account);
 
-    const provider = await getWalletProvider();
-    if (!provider) {
+    if (!walletManager || !walletManager.currentProvider) {
       throw new Error('Wallet provider no longer available');
     }
 
     // Setup ethers providers
-    ethersProvider = new ethers.providers.Web3Provider(provider);
+    ethersProvider = new ethers.providers.Web3Provider(walletManager.currentProvider);
     ethersSigner = ethersProvider.getSigner();
     currentAccount = account;
 
-    // Verify chain
+    // Network verification is now handled in connectWallet(), but we double-check here
     const network = await ethersProvider.getNetwork();
     console.log('Current chain:', network.chainId);
 
     if (network.chainId !== CONFIG.CHAIN_ID) {
       console.warn(`Wrong chain: ${network.chainId}, expected: ${CONFIG.CHAIN_ID}`);
+      connectionState = ConnectionState.WRONG_NETWORK;
       updateUIForWrongChain();
-      connectionState = ConnectionState.ERROR;
       return;
     }
 
@@ -465,9 +373,8 @@ function startConnectionHealthCheck() {
       await Promise.race([networkPromise, timeoutPromise]);
 
       // Verify account is still accessible
-      const provider = await getWalletProvider();
-      if (provider) {
-        const accounts = await provider.request({ method: 'eth_accounts' });
+      if (walletManager) {
+        const accounts = await walletManager.getAccounts();
 
         if (!accounts || !accounts.includes(currentAccount)) {
           console.warn('Account no longer accessible');
@@ -524,7 +431,7 @@ async function handleDisconnection() {
  * Attach wallet event listeners
  */
 function attachWalletEventListeners() {
-  if (!window.ethereum || !window.ethereum.on) return;
+  if (!walletManager) return;
 
   // Remove existing listeners first
   removeWalletEventListeners();
@@ -543,8 +450,8 @@ function attachWalletEventListeners() {
     console.log('Chain changed to:', newChainId);
 
     if (newChainId !== CONFIG.CHAIN_ID) {
+      connectionState = ConnectionState.WRONG_NETWORK;
       updateUIForWrongChain();
-      connectionState = ConnectionState.ERROR;
     } else {
       // Reconnect on correct chain
       if (currentAccount) {
@@ -558,9 +465,9 @@ function attachWalletEventListeners() {
     handleDisconnection();
   };
 
-  window.ethereum.on('accountsChanged', accountsChangedHandler);
-  window.ethereum.on('chainChanged', chainChangedHandler);
-  window.ethereum.on('disconnect', disconnectHandler);
+  walletManager.on('accountsChanged', accountsChangedHandler);
+  walletManager.on('chainChanged', chainChangedHandler);
+  walletManager.on('disconnect', disconnectHandler);
 
   console.log('✓ Wallet event listeners attached');
 }
@@ -569,16 +476,16 @@ function attachWalletEventListeners() {
  * Remove wallet event listeners
  */
 function removeWalletEventListeners() {
-  if (!window.ethereum || !window.ethereum.removeListener) return;
+  if (!walletManager) return;
 
   if (accountsChangedHandler) {
-    window.ethereum.removeListener('accountsChanged', accountsChangedHandler);
+    walletManager.removeListener('accountsChanged', accountsChangedHandler);
   }
   if (chainChangedHandler) {
-    window.ethereum.removeListener('chainChanged', chainChangedHandler);
+    walletManager.removeListener('chainChanged', chainChangedHandler);
   }
   if (disconnectHandler) {
-    window.ethereum.removeListener('disconnect', disconnectHandler);
+    walletManager.removeListener('disconnect', disconnectHandler);
   }
 }
 
@@ -1137,7 +1044,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.warn('SDK ready failed:', err);
     }
   }
-  
+
   // Small delay to ensure SDK is fully initialized
   setTimeout(initializeContractIntegration, 100);
 });
