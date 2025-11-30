@@ -196,18 +196,26 @@ async function getWalletProvider() {
     
     try {
       // getEthereumProvider() returns a Promise, await it
-      const farcasterProvider = await window.farcasterSDK.wallet.getEthereumProvider();
-      console.log('Got Farcaster Ethereum provider:', farcasterProvider);
+      console.log('Calling getEthereumProvider()...');
+      const getProviderPromise = window.farcasterSDK.wallet.getEthereumProvider();
+      console.log('Got promise:', getProviderPromise);
+      
+      const farcasterProvider = await getProviderPromise;
+      console.log('Provider resolved:', farcasterProvider);
+      console.log('Provider type:', typeof farcasterProvider);
+      console.log('Provider has request?:', typeof farcasterProvider?.request);
       
       if (farcasterProvider && typeof farcasterProvider.request === 'function') {
-        console.log('Using Farcaster wallet provider');
+        console.log('✓ Using Farcaster wallet provider');
         cachedFarcasterProvider = farcasterProvider;
         return farcasterProvider;
       } else {
-        console.warn('Farcaster provider invalid or missing request method');
+        console.warn('✗ Farcaster provider invalid. Has request method?:', typeof farcasterProvider?.request);
+        return null;
       }
     } catch (error) {
       console.warn('Could not get Farcaster wallet provider:', error);
+      return null;
     }
   } else if (!isInFarcaster && window.farcasterSDK) {
     console.log('Farcaster SDK available but NOT in mini app - skipping Farcaster provider');
