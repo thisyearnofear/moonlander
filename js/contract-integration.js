@@ -171,15 +171,16 @@ async function initializeContractIntegration() {
  * Returns a Promise that resolves to the provider
  */
 async function getWalletProvider() {
-  // Check for cached Farcaster provider first
-  if (cachedFarcasterProvider) {
+  // Check if we're actually in Farcaster mini app
+  const isInFarcaster = window.farcasterSDK && typeof window.farcasterSDK.isInMiniApp === 'function' && window.farcasterSDK.isInMiniApp();
+  
+  // Only use cached Farcaster provider if we're in Farcaster context
+  if (isInFarcaster && cachedFarcasterProvider) {
     console.log('Using cached Farcaster provider');
     return cachedFarcasterProvider;
   }
 
   // Check for Farcaster wallet first (ONLY when actually running in Farcaster mini app)
-  const isInFarcaster = window.farcasterSDK && typeof window.farcasterSDK.isInMiniApp === 'function' && window.farcasterSDK.isInMiniApp();
-  
   if (isInFarcaster && window.farcasterSDK && window.farcasterSDK.wallet) {
     console.log('Running in Farcaster mini app, trying to get wallet provider...');
     
@@ -199,7 +200,9 @@ async function getWalletProvider() {
       console.warn('Could not get Farcaster wallet provider:', error);
     }
   } else if (!isInFarcaster && window.farcasterSDK) {
-    console.log('Farcaster SDK available but NOT in mini app - using fallback providers');
+    console.log('Farcaster SDK available but NOT in mini app - skipping Farcaster provider');
+    // Clear cache if we're not in Farcaster
+    cachedFarcasterProvider = null;
   }
 
   if (!window.ethereum) return null;
