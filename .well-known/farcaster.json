@@ -16,10 +16,7 @@
     "primaryCategory": "games",
     "tags": [
       "game",
-      "arcade",
-      "skill",
-      "lunar",
-      "classic",
+      "m00nad",
       "crypto",
       "monad"
     ],
@@ -31,6 +28,9 @@
       "https://m00nlander.netlify.app/images/screenshot-2-1284x2778.png",
       "https://m00nlander.netlify.app/images/screenshot-3-1284x2778.png"
     ],
+    "heroImageUrl": "https://m00nlander.netlify.app/images/og-1200x630.png",
+    "tagline": "Classic lunar lander on Monad",
+    "castShareUrl": "https://m00nlander.netlify.app/",
     "requiredCapabilities": [
       "actions.composeCast"
     ]
