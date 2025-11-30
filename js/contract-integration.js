@@ -159,16 +159,27 @@ async function initializeContractIntegration() {
  */
 function getWalletProvider() {
   // Check for Farcaster wallet first (when running in Farcaster mini app)
-  if (window.farcasterSDK && window.farcasterSDK.wallet) {
-    try {
-      const farcasterProvider = window.farcasterSDK.wallet.getEthereumProvider();
-      if (farcasterProvider) {
-        console.log('Using Farcaster wallet provider');
-        return farcasterProvider;
+  if (window.farcasterSDK) {
+    console.log('Farcaster SDK available, checking for wallet provider');
+    console.log('window.farcasterSDK:', window.farcasterSDK);
+    console.log('window.farcasterSDK.wallet:', window.farcasterSDK.wallet);
+    
+    if (window.farcasterSDK.wallet) {
+      try {
+        const farcasterProvider = window.farcasterSDK.wallet.getEthereumProvider();
+        console.log('Farcaster Ethereum provider:', farcasterProvider);
+        if (farcasterProvider) {
+          console.log('Using Farcaster wallet provider');
+          return farcasterProvider;
+        }
+      } catch (error) {
+        console.warn('Could not get Farcaster wallet provider:', error);
       }
-    } catch (error) {
-      console.warn('Could not get Farcaster wallet provider:', error);
+    } else {
+      console.log('window.farcasterSDK.wallet is not available');
     }
+  } else {
+    console.log('window.farcasterSDK not available');
   }
 
   if (!window.ethereum) return null;
@@ -1042,7 +1053,21 @@ window.contractIntegration = {
 };
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', initializeContractIntegration);
+// Wait for Farcaster SDK to be ready if present
+document.addEventListener('DOMContentLoaded', async () => {
+  // Wait for SDK if available
+  if (window.sdkReady) {
+    try {
+      await window.sdkReady;
+      console.log('Farcaster SDK ready, initializing contract integration');
+    } catch (err) {
+      console.warn('SDK ready failed:', err);
+    }
+  }
+  
+  // Small delay to ensure SDK is fully initialized
+  setTimeout(initializeContractIntegration, 100);
+});
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
