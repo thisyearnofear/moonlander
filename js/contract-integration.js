@@ -172,14 +172,12 @@ async function initializeContractIntegration() {
  */
 async function getWalletProvider() {
   // Check if we're actually in Farcaster mini app
-  // Only consider Farcaster provider if window.ethereum is NOT available (true mini app environment)
   let isInFarcaster = false;
   
   try {
     isInFarcaster = window.farcasterSDK && 
                     typeof window.farcasterSDK.isInMiniApp === 'function' && 
-                    window.farcasterSDK.isInMiniApp() &&
-                    !window.ethereum; // Mini app environment doesn't have window.ethereum
+                    window.farcasterSDK.isInMiniApp();
   } catch (e) {
     console.warn('Could not check Farcaster mini app status:', e);
   }
