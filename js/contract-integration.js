@@ -40,6 +40,8 @@ let gameStarted = false;
 let connectionState = ConnectionState.DISCONNECTED;
 let connectionPromise = null;
 let healthCheckInterval = null;
+let cachedFarcasterProvider = null;
+let farcasterProviderPromise = null;
 
 // Event listener references for cleanup
 let accountsChangedHandler = null;
@@ -103,7 +105,7 @@ async function initializeContractIntegration() {
     if (savedAccount) {
       console.log('Attempting to restore wallet connection for:', savedAccount);
       try {
-        const provider = getWalletProvider();
+        const provider = await getWalletProvider();
         if (provider) {
           const accounts = await provider.request({ method: 'eth_accounts' });
 
@@ -127,7 +129,7 @@ async function initializeContractIntegration() {
 
     // Check if already connected
     try {
-      const provider = getWalletProvider();
+      const provider = await getWalletProvider();
       if (!provider) {
         updateUIForNoWallet();
         return;
@@ -156,30 +158,41 @@ async function initializeContractIntegration() {
 /**
  * Get the best available wallet provider
  * Prioritizes Farcaster wallet when in mini app, then filters out problematic wallets
+ * Returns a Promise that resolves to the provider
  */
-function getWalletProvider() {
+async function getWalletProvider() {
+  // Check for cached Farcaster provider first
+  if (cachedFarcasterProvider) {
+    console.log('Using cached Farcaster provider');
+    return cachedFarcasterProvider;
+  }
+
   // Check for Farcaster wallet first (when running in Farcaster mini app)
-  if (window.farcasterSDK) {
-    console.log('Farcaster SDK available, checking for wallet provider');
-    console.log('window.farcasterSDK:', window.farcasterSDK);
-    console.log('window.farcasterSDK.wallet:', window.farcasterSDK.wallet);
+  if (window.farcasterSDK && window.farcasterSDK.wallet) {
+    console.log('Farcaster SDK available, getting wallet provider...');
     
-    if (window.farcasterSDK.wallet) {
-      try {
-        const farcasterProvider = window.farcasterSDK.wallet.getEthereumProvider();
-        console.log('Farcaster Ethereum provider:', farcasterProvider);
-        if (farcasterProvider) {
-          console.log('Using Farcaster wallet provider');
-          return farcasterProvider;
+    if (!farcasterProviderPromise) {
+      farcasterProviderPromise = (async () => {
+        try {
+          const farcasterProviderPromise = window.farcasterSDK.wallet.getEthereumProvider();
+          const farcasterProvider = await farcasterProviderPromise;
+          console.log('Got Farcaster Ethereum provider:', farcasterProvider);
+          if (farcasterProvider) {
+            cachedFarcasterProvider = farcasterProvider;
+            return farcasterProvider;
+          }
+        } catch (error) {
+          console.warn('Could not get Farcaster wallet provider:', error);
         }
-      } catch (error) {
-        console.warn('Could not get Farcaster wallet provider:', error);
-      }
-    } else {
-      console.log('window.farcasterSDK.wallet is not available');
+        return null;
+      })();
     }
-  } else {
-    console.log('window.farcasterSDK not available');
+
+    const provider = await farcasterProviderPromise;
+    if (provider) {
+      console.log('Using Farcaster wallet provider');
+      return provider;
+    }
   }
 
   if (!window.ethereum) return null;
@@ -244,7 +257,7 @@ async function connectWallet(maxRetries = 2) {
         connectionState = ConnectionState.CONNECTING;
 
         // Get wallet provider
-        const provider = getWalletProvider();
+        const provider = await getWalletProvider();
         if (!provider) {
           throw new Error('No compatible wallet found. Please install MetaMask or Coinbase Wallet.');
         }
@@ -310,7 +323,7 @@ async function handleWalletConnected(account) {
   try {
     console.log('Setting up wallet connection for:', account);
 
-    const provider = getWalletProvider();
+    const provider = await getWalletProvider();
     if (!provider) {
       throw new Error('Wallet provider no longer available');
     }
@@ -392,7 +405,7 @@ function startConnectionHealthCheck() {
       await Promise.race([networkPromise, timeoutPromise]);
 
       // Verify account is still accessible
-      const provider = getWalletProvider();
+      const provider = await getWalletProvider();
       if (provider) {
         const accounts = await provider.request({ method: 'eth_accounts' });
 
