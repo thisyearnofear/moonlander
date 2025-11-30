@@ -79,8 +79,14 @@ async function initializeContractIntegration() {
     return;
   }
 
+  // Check if in Farcaster mini app environment
+  const inFarcasterMiniApp = window.farcasterSDK && typeof window.farcasterSDK.wallet !== 'undefined';
+  if (inFarcasterMiniApp) {
+    console.log('Detected Farcaster mini app environment - will auto-connect wallet');
+  }
+
   // Check if wallet is available
-  if (typeof window.ethereum === 'undefined') {
+  if (typeof window.ethereum === 'undefined' && !inFarcasterMiniApp) {
     console.warn('No Web3 wallet detected - running in read-only mode');
     updateUIForNoWallet();
     return;
@@ -97,21 +103,37 @@ async function initializeContractIntegration() {
     if (savedAccount) {
       console.log('Attempting to restore wallet connection for:', savedAccount);
       try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        const provider = getWalletProvider();
+        if (provider) {
+          const accounts = await provider.request({ method: 'eth_accounts' });
 
-        if (accounts && accounts.includes(savedAccount)) {
-          console.log('Restoring wallet connection...');
-          await handleWalletConnected(accounts[0]);
-          return;
+          if (accounts && accounts.includes(savedAccount)) {
+            console.log('Restoring wallet connection...');
+            await handleWalletConnected(accounts[0]);
+            return;
+          }
         }
       } catch (err) {
         console.warn('Could not restore connection:', err);
       }
     }
 
+    // In Farcaster mini app, auto-connect if no saved connection
+    if (inFarcasterMiniApp) {
+      console.log('Auto-connecting to Farcaster wallet...');
+      await connectWallet();
+      return;
+    }
+
     // Check if already connected
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      const provider = getWalletProvider();
+      if (!provider) {
+        updateUIForNoWallet();
+        return;
+      }
+
+      const accounts = await provider.request({ method: 'eth_accounts' });
 
       if (accounts && accounts.length > 0) {
         await handleWalletConnected(accounts[0]);
@@ -133,9 +155,22 @@ async function initializeContractIntegration() {
 
 /**
  * Get the best available wallet provider
- * Filters out problematic wallets (Port, Backpack)
+ * Prioritizes Farcaster wallet when in mini app, then filters out problematic wallets
  */
 function getWalletProvider() {
+  // Check for Farcaster wallet first (when running in Farcaster mini app)
+  if (window.farcasterSDK && window.farcasterSDK.wallet) {
+    try {
+      const farcasterProvider = window.farcasterSDK.wallet.getEthereumProvider();
+      if (farcasterProvider) {
+        console.log('Using Farcaster wallet provider');
+        return farcasterProvider;
+      }
+    } catch (error) {
+      console.warn('Could not get Farcaster wallet provider:', error);
+    }
+  }
+
   if (!window.ethereum) return null;
 
   // Handle multiple providers
@@ -202,8 +237,6 @@ async function connectWallet(maxRetries = 2) {
         if (!provider) {
           throw new Error('No compatible wallet found. Please install MetaMask or Coinbase Wallet.');
         }
-
-        updateUIWithMessage('Connecting wallet...');
 
         // Request accounts with timeout
         const accountsPromise = provider.request({ method: 'eth_requestAccounts' });
