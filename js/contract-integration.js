@@ -82,7 +82,17 @@ async function initializeContractIntegration() {
   }
 
   // Check if in Farcaster mini app environment
-  const inFarcasterMiniApp = window.farcasterSDK && typeof window.farcasterSDK.wallet !== 'undefined';
+  // Use isInMiniApp() if available, otherwise fall back to SDK check
+  let inFarcasterMiniApp = false;
+  try {
+    if (window.farcasterSDK && typeof window.farcasterSDK.isInMiniApp === 'function') {
+      inFarcasterMiniApp = window.farcasterSDK.isInMiniApp();
+      console.log('Farcaster isInMiniApp():', inFarcasterMiniApp);
+    }
+  } catch (e) {
+    console.log('Could not check isInMiniApp():', e);
+  }
+  
   if (inFarcasterMiniApp) {
     console.log('Detected Farcaster mini app environment - will auto-connect wallet');
   }
@@ -167,9 +177,11 @@ async function getWalletProvider() {
     return cachedFarcasterProvider;
   }
 
-  // Check for Farcaster wallet first (when running in Farcaster mini app)
-  if (window.farcasterSDK && window.farcasterSDK.wallet) {
-    console.log('Farcaster SDK available, trying to get wallet provider...');
+  // Check for Farcaster wallet first (ONLY when actually running in Farcaster mini app)
+  const isInFarcaster = window.farcasterSDK && typeof window.farcasterSDK.isInMiniApp === 'function' && window.farcasterSDK.isInMiniApp();
+  
+  if (isInFarcaster && window.farcasterSDK && window.farcasterSDK.wallet) {
+    console.log('Running in Farcaster mini app, trying to get wallet provider...');
     
     try {
       // getEthereumProvider() returns a Promise, await it
@@ -186,6 +198,8 @@ async function getWalletProvider() {
     } catch (error) {
       console.warn('Could not get Farcaster wallet provider:', error);
     }
+  } else if (!isInFarcaster && window.farcasterSDK) {
+    console.log('Farcaster SDK available but NOT in mini app - using fallback providers');
   }
 
   if (!window.ethereum) return null;
