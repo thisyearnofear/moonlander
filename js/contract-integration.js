@@ -290,7 +290,6 @@ async function handleWalletConnected(account) {
     connectionState = ConnectionState.CONNECTED;
     saveWalletState();
     updateUIForConnectedWallet(currentAccount);
-    updateUIWithMessage('Wallet connected!');
 
     // Start health monitoring
     startConnectionHealthCheck();

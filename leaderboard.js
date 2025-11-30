@@ -299,11 +299,23 @@ function handlePageFlow() {
   const urlParams = new URLSearchParams(window.location.search);
   const score = urlParams.get('score');
   const landed = urlParams.get('landed');
+  const isFresh = urlParams.get('fresh') === 'true';
 
   if (score && landed !== null) {
     hideWelcomeSection();
-    showPlayAgainButton();
-    setTimeout(() => highlightPlayerScore(parseInt(score)), 2000);
+
+    if (isFresh) {
+      // Fresh score - show submit button
+      const playBtn = document.getElementById('playBtn');
+      const submitScoreBtn = document.getElementById('submitScoreBtn');
+
+      if (submitScoreBtn) submitScoreBtn.style.display = 'block';
+      if (playBtn) playBtn.style.display = 'none';
+    } else {
+      // Viewing past score
+      showPlayAgainButton();
+      setTimeout(() => highlightPlayerScore(parseInt(score)), 2000);
+    }
   } else {
     showWelcomeSection();
     showPlayButton();
