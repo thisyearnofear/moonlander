@@ -258,6 +258,10 @@ async function connectWallet(maxRetries = 2) {
 
         // Get wallet provider
         const provider = await getWalletProvider();
+        console.log('Got provider from getWalletProvider():', provider);
+        console.log('Provider type:', typeof provider);
+        console.log('Provider.request:', typeof provider?.request);
+        
         if (!provider) {
           throw new Error('No compatible wallet found. Please install MetaMask or Coinbase Wallet.');
         }
