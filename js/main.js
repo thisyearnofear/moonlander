@@ -500,7 +500,7 @@ function endGame() {
     // Redirect to leaderboard with score
     // Mark as fresh so they can submit it
     setTimeout(() => {
-        window.location.href = `leaderboard.html?score=${currentScore}&landed=${hasLanded ? 1 : 0}&fresh=true`;
+        window.location.href = `index.html?score=${currentScore}&landed=${hasLanded ? 1 : 0}&fresh=true`;
     }, 1500);
 }
 

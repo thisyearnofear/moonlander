@@ -41,18 +41,24 @@ function fillLeftInfoPanel() {
     hudContext.textAlign = 'left';
     hudContext.fillStyle = infoPanelTextColor;
     hudContext.font = "Normal "+infoPanelFontSize+"px Courier New";
+
+    // Check if we're on mobile and adjust positioning to avoid top HUD
+    const isMobile = window.innerWidth < 600;
+    // Add extra offset on mobile to avoid the top HUD buttons
+    const extraOffset = isMobile ? 0.08 : 0; // 0.08 is about the space the HUD buttons take
+
     hudContext.fillText(
-        "SCORE".padEnd(7, " ") + currentScore.toString().padStart(4, "0"), 
-        hudWidth*infoPanelRelativeOffsetX, 
-        hudHeight*(infoPanelRelativeOffsetY+0*infoPanelRelativeOffsetYStep));
+        "SCORE".padEnd(7, " ") + currentScore.toString().padStart(4, "0"),
+        hudWidth*infoPanelRelativeOffsetX,
+        hudHeight*(infoPanelRelativeOffsetY+extraOffset+0*infoPanelRelativeOffsetYStep));
     hudContext.fillText(
-        "TIME".padEnd(7, " ") + (currentTime/59 | 0).toString().padStart(1, "0")+":"+(currentTime%59).toFixed(0).padStart(2, "0"), 
-        hudWidth*infoPanelRelativeOffsetX, 
-        hudHeight*(infoPanelRelativeOffsetY+1*infoPanelRelativeOffsetYStep));
+        "TIME".padEnd(7, " ") + (currentTime/59 | 0).toString().padStart(1, "0")+":"+(currentTime%59).toFixed(0).padStart(2, "0"),
+        hudWidth*infoPanelRelativeOffsetX,
+        hudHeight*(infoPanelRelativeOffsetY+extraOffset+1*infoPanelRelativeOffsetYStep));
     hudContext.fillText(
-        "FUEL".padEnd(7, " ") + currentFuel.toFixed(0).padStart(4, "0"), 
-        hudWidth*infoPanelRelativeOffsetX, 
-        hudHeight*(infoPanelRelativeOffsetY+2*infoPanelRelativeOffsetYStep));
+        "FUEL".padEnd(7, " ") + currentFuel.toFixed(0).padStart(4, "0"),
+        hudWidth*infoPanelRelativeOffsetX,
+        hudHeight*(infoPanelRelativeOffsetY+extraOffset+2*infoPanelRelativeOffsetYStep));
     if(isAlerted) {
         let fuelAlertText;
         if(hasFuel) {
@@ -62,74 +68,87 @@ function fillLeftInfoPanel() {
             fuelAlertText = "OUT OF FUEL";
         }
         hudContext.fillText(
-            fuelAlertText, 
-            hudWidth*infoPanelRelativeOffsetX, 
-            hudHeight*(infoPanelRelativeOffsetY+3*infoPanelRelativeOffsetYStep));
+            fuelAlertText,
+            hudWidth*infoPanelRelativeOffsetX,
+            hudHeight*(infoPanelRelativeOffsetY+extraOffset+3*infoPanelRelativeOffsetYStep));
     }
 }
 
 function fillRightInfoPanel() {
     const isMobile = window.innerWidth < 600;
-    
+    // Add extra offset on mobile to avoid the top HUD buttons
+    const extraOffset = isMobile ? 0.08 : 0; // 0.08 is about the space the HUD buttons take
+
     hudContext.textAlign = 'right';
     hudContext.fillStyle = infoPanelTextColor;
     hudContext.font = "Normal "+infoPanelFontSize+"px Courier New";
-    
+
     // Always show altitude (critical info)
     hudContext.fillText(
-        isMobile ? "ALT".padEnd(8, " ") : "ALTITUDE".padEnd(20, " ") + altitude.toFixed(0).padStart(4, "0"), 
-        hudWidth*(1-infoPanelRelativeOffsetX), 
-        hudHeight*(infoPanelRelativeOffsetY+0*infoPanelRelativeOffsetYStep));
-    
+        isMobile ? "ALT".padEnd(8, " ") : "ALTITUDE".padEnd(20, " ") + altitude.toFixed(0).padStart(4, "0"),
+        hudWidth*(1-infoPanelRelativeOffsetX),
+        hudHeight*(infoPanelRelativeOffsetY+extraOffset+0*infoPanelRelativeOffsetYStep));
+
     // Show altitude value on next line for mobile
     if (isMobile) {
         hudContext.fillText(
             altitude.toFixed(0).padStart(4, "0"),
             hudWidth*(1-infoPanelRelativeOffsetX),
-            hudHeight*(infoPanelRelativeOffsetY+0.5*infoPanelRelativeOffsetYStep));
+            hudHeight*(infoPanelRelativeOffsetY+extraOffset+0.5*infoPanelRelativeOffsetYStep));
     }
-    
+
     // Vertical speed (critical for landing)
     hudContext.fillText(
-        isMobile ? "V-SPD".padEnd(8, " ") : "VERTICAL SPEED".padEnd(18, " ") + (-velocityY).toFixed(1).padStart(6, " "), 
-        hudWidth*(1-infoPanelRelativeOffsetX), 
-        hudHeight*(infoPanelRelativeOffsetY+1*infoPanelRelativeOffsetYStep));
-    
+        isMobile ? "V-SPD".padEnd(8, " ") : "VERTICAL SPEED".padEnd(18, " ") + (-velocityY).toFixed(1).padStart(6, " "),
+        hudWidth*(1-infoPanelRelativeOffsetX),
+        hudHeight*(infoPanelRelativeOffsetY+extraOffset+1*infoPanelRelativeOffsetYStep));
+
     if (isMobile) {
         hudContext.fillText(
             (-velocityY).toFixed(1).padStart(6, " "),
             hudWidth*(1-infoPanelRelativeOffsetX),
-            hudHeight*(infoPanelRelativeOffsetY+1.5*infoPanelRelativeOffsetYStep));
+            hudHeight*(infoPanelRelativeOffsetY+extraOffset+1.5*infoPanelRelativeOffsetYStep));
     }
-    
+
     // Hide horizontal speed and rotation angle on very small screens
     if (!isMobile) {
         hudContext.fillText(
-            "HORIZONTAL SPEED".padEnd(18, " ") + velocityX.toFixed(1).padStart(6, " "), 
-            hudWidth*(1-infoPanelRelativeOffsetX), 
-            hudHeight*(infoPanelRelativeOffsetY+2*infoPanelRelativeOffsetYStep));
+            "HORIZONTAL SPEED".padEnd(18, " ") + velocityX.toFixed(1).padStart(6, " "),
+            hudWidth*(1-infoPanelRelativeOffsetX),
+            hudHeight*(infoPanelRelativeOffsetY+extraOffset+2*infoPanelRelativeOffsetYStep));
         hudContext.fillText(
-            "ROTATION ANGLE".padEnd(18, " ") + (-lander.rotation.z * (180/Math.PI)).toFixed(1).padStart(6, " "), 
-            hudWidth*(1-infoPanelRelativeOffsetX), 
-            hudHeight*(infoPanelRelativeOffsetY+3*infoPanelRelativeOffsetYStep));
+            "ROTATION ANGLE".padEnd(18, " ") + (-lander.rotation.z * (180/Math.PI)).toFixed(1).padStart(6, " "),
+            hudWidth*(1-infoPanelRelativeOffsetX),
+            hudHeight*(infoPanelRelativeOffsetY+extraOffset+3*infoPanelRelativeOffsetYStep));
     }
 }
 
 function fillMainPanel() {
     hudContext.textAlign = 'center';
 
+    // Check if we're on a small mobile screen
+    const isMobile = window.innerWidth < 600;
+
     if(isGameOver) {
         hudContext.font = "Normal "+mainPanelFontSize+"px Courier New";
         hudContext.fillStyle = mainPanelTextColor;
 
-        hudContext.fillText(
-            "PRESS ANY KEY TO PLAY", 
-            hudWidth*mainPanelRelativeOffsetX, 
-            hudHeight*(mainPanelRelativeOffsetY+0*mainPanelRelativeOffsetYStep));
-        hudContext.fillText(
-            "ARROW KEYS TO MOVE", 
-            hudWidth*mainPanelRelativeOffsetX, 
-            hudHeight*(mainPanelRelativeOffsetY+1*mainPanelRelativeOffsetYStep));
+        // On mobile, make the text more compact
+        if (isMobile) {
+            hudContext.fillText(
+                "TAP TO PLAY",
+                hudWidth*mainPanelRelativeOffsetX,
+                hudHeight*(mainPanelRelativeOffsetY+0*mainPanelRelativeOffsetYStep));
+        } else {
+            hudContext.fillText(
+                "PRESS ANY KEY TO PLAY",
+                hudWidth*mainPanelRelativeOffsetX,
+                hudHeight*(mainPanelRelativeOffsetY+0*mainPanelRelativeOffsetYStep));
+            hudContext.fillText(
+                "ARROW KEYS TO MOVE",
+                hudWidth*mainPanelRelativeOffsetX,
+                hudHeight*(mainPanelRelativeOffsetY+1*mainPanelRelativeOffsetYStep));
+        }
     }
     else if(isBetweenRounds) {
         hudContext.font = "Normal "+statsPanelFontSize+"px Courier New";
@@ -139,36 +158,73 @@ function fillMainPanel() {
 
         gameOverText = "";
         if(hasLanded) {
-            landingText = "SUCCESSFULLY LANDED";
-            fuelText = fuelChange.toFixed(0) + " FUEL UNITS GAINED";
-            scoreText = scoreChange + " POINTS GAINED";
+            // More compact landing messages for mobile
+            landingText = isMobile ? (hasFuel ? "LANDED!" : "LANDED") : "SUCCESSFULLY LANDED";
+            fuelText = isMobile ? (fuelChange >= 0 ? `+${fuelChange} FUEL` : `${fuelChange} FUEL`) : fuelChange.toFixed(0) + " FUEL UNITS GAINED";
+            scoreText = isMobile ? `+${scoreChange}` : scoreChange + " POINTS GAINED";
         }
         else {
-            landingText = "LANDER DESTROYED";
-            fuelText = fuelChange.toFixed(0) + " FUEL UNITS LOST";
-            scoreText = crashInfo;
+            // More compact crash messages for mobile
+            if (crashInfo === "OUT OF BOUNDS") {
+                landingText = isMobile ? "OUT OF BOUNDS" : "LANDER DESTROYED";
+                scoreText = isMobile ? "OUT OF BOUNDS" : crashInfo;
+            } else if (crashInfo === "TOO CLOSE TO EDGE OF TERRAIN") {
+                landingText = isMobile ? "TOO CLOSE" : "LANDER DESTROYED";
+                scoreText = isMobile ? "TOO CLOSE" : crashInfo;
+            } else if (crashInfo === "CRASHED ON UNEVEN TERRAIN") {
+                landingText = isMobile ? "CRASHED" : "LANDER DESTROYED";
+                scoreText = isMobile ? "CRASHED" : crashInfo;
+            } else if (crashInfo === "LANDING ANGLE WAS TOO HIGH") {
+                landingText = isMobile ? "BAD ANGLE" : "LANDER DESTROYED";
+                scoreText = isMobile ? "BAD ANGLE" : crashInfo;
+            } else if (crashInfo === "LANDING VELOCITY WAS TOO HIGH") {
+                landingText = isMobile ? "TOO FAST" : "LANDER DESTROYED";
+                scoreText = isMobile ? "TOO FAST" : crashInfo;
+            } else {
+                landingText = isMobile ? "CRASHED" : "LANDER DESTROYED";
+                scoreText = crashInfo;
+            }
+
+            fuelText = isMobile ? (fuelChange >= 0 ? `+${fuelChange} FUEL` : `${fuelChange} FUEL`) : fuelChange.toFixed(0) + " FUEL UNITS LOST";
+
             if(!hasFuel) {
-                fuelText = "OUT OF FUEL";
-                gameOverText = "GAME OVER";
+                fuelText = isMobile ? "NO FUEL" : "OUT OF FUEL";
+                gameOverText = isMobile ? "GAME OVER" : "GAME OVER";
             }
         }
 
+        // Adjust positioning based on mobile state to save space
+        let lineOffset = isMobile ? 0.7 : 1.0;
+        let currentYStep = 0;
+
         hudContext.fillText(
-            landingText, 
-            hudWidth*statsPanelRelativeOffsetX, 
-            hudHeight*(statsPanelRelativeOffsetY+0*statsPanelRelativeOffsetYStep));
-        hudContext.fillText(
-            scoreText, 
-            hudWidth*statsPanelRelativeOffsetX, 
-            hudHeight*(statsPanelRelativeOffsetY+1*statsPanelRelativeOffsetYStep));
-        hudContext.fillText(
-            fuelText, 
-            hudWidth*statsPanelRelativeOffsetX, 
-            hudHeight*(statsPanelRelativeOffsetY+2*statsPanelRelativeOffsetYStep));
-        hudContext.fillText(
-            gameOverText, 
-            hudWidth*statsPanelRelativeOffsetX, 
-            hudHeight*(statsPanelRelativeOffsetY+3*statsPanelRelativeOffsetYStep));        
+            landingText,
+            hudWidth*statsPanelRelativeOffsetX,
+            hudHeight*(statsPanelRelativeOffsetY+currentYStep*statsPanelRelativeOffsetYStep));
+        currentYStep += lineOffset;
+
+        if (scoreText) {
+            hudContext.fillText(
+                scoreText,
+                hudWidth*statsPanelRelativeOffsetX,
+                hudHeight*(statsPanelRelativeOffsetY+currentYStep*statsPanelRelativeOffsetYStep));
+            currentYStep += lineOffset;
+        }
+
+        if (fuelText) {
+            hudContext.fillText(
+                fuelText,
+                hudWidth*statsPanelRelativeOffsetX,
+                hudHeight*(statsPanelRelativeOffsetY+currentYStep*statsPanelRelativeOffsetYStep));
+            currentYStep += lineOffset;
+        }
+
+        if (gameOverText) {
+            hudContext.fillText(
+                gameOverText,
+                hudWidth*statsPanelRelativeOffsetX,
+                hudHeight*(statsPanelRelativeOffsetY+currentYStep*statsPanelRelativeOffsetYStep));
+        }
     }
 }
 
@@ -194,6 +250,27 @@ function drawMultipliers() {
 
         let hudPoint = worldToHudCoord(pointX, pointY);
         hudContext.fillText("X"+mul, hudPoint[0], hudPoint[1] + fontSize);
+    }
+}
+
+// Function to format large numbers in a compact way (e.g., 1.6m instead of full number)
+function formatCompactNumber(num) {
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + 'm';
+    } else if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'k';
+    } else {
+        return num.toFixed(1);
+    }
+}
+
+// Function to format balance text for compact display
+function formatBalanceText(balance) {
+    // For very large numbers, use compact format
+    if (balance >= 1000) {
+        return formatCompactNumber(balance) + 'm00nad';
+    } else {
+        return balance.toFixed(1) + 'm00nad';
     }
 }
 

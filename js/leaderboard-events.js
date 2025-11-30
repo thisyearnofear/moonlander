@@ -75,27 +75,11 @@ async function loadLeaderboardFromContract() {
       provider
     );
 
-    // Try new enhanced contract method first, fall back to events
+    // Use event scanning since contract doesn't have getTopScores method
     let topScores = [];
     
     try {
-      console.log('Calling getTopScores() directly from contract...');
-      const rawScores = await contract.getTopScores(0, 100);
-      
-      topScores = rawScores.map(score => ({
-        player: score.player,
-        score: parseInt(score.score.toString()),
-        landed: score.landed,
-        timestamp: parseInt(score.timestamp.toString()),
-        blockNumber: parseInt(score.blockNumber.toString()),
-        transactionHash: 'direct-query'
-      }));
-      
-      console.log('Using enhanced contract method - got', topScores.length, 'scores');
-    } catch (contractError) {
-      console.warn('Enhanced contract method failed, falling back to event scanning:', contractError.message);
-      
-      // Fallback to event scanning
+      // Event scanning
       const currentBlock = await provider.getBlockNumber();
       const searchFromBlock = Math.max(0, currentBlock - 200);
       
@@ -147,6 +131,10 @@ async function loadLeaderboardFromContract() {
       });
       
       topScores = validScores.slice(0, 100);
+    } catch (contractError) {
+      console.warn('Event scanning failed:', contractError.message);
+      // Return empty array if event scanning fails
+      topScores = [];
     }
 
     console.log(`Displaying ${topScores.length} safe landings`);

@@ -8,18 +8,18 @@ function showModal(message, title = 'Alert', buttonText = 'OK') {
   const titleEl = document.getElementById('modalTitle');
   const messageEl = document.getElementById('modalMessage');
   const buttonEl = document.getElementById('modalButton');
-  
+
   if (!backdrop) {
     // Fallback to alert if modal elements don't exist
     alert(message);
     return new Promise(resolve => resolve());
   }
-  
+
   titleEl.textContent = title;
   messageEl.textContent = message;
   buttonEl.textContent = buttonText;
   backdrop.classList.add('active');
-  
+
   return new Promise(resolve => {
     buttonEl.onclick = () => {
       backdrop.classList.remove('active');
@@ -39,25 +39,24 @@ const landed = landedFromUrl !== undefined ? landedFromUrl : parseInt(localStora
 // Show score section only if we have a fresh score from gameplay
 const hasScore = scoreFromUrl > 0;
 const scoreSection = document.getElementById('scoreSection');
-const menuPlayBtn = document.getElementById('menuPlayBtn');
+const playBtn = document.getElementById('playBtn');
 const submitScoreBtn = document.getElementById('submitScoreBtn');
-const playAgainBtn = document.getElementById('playAgain');
 const mainMenuBtn = document.getElementById('mainMenu');
 
 if (hasScore && isFreshScore) {
   // Fresh score from just finishing a game
   scoreSection.style.display = 'block';
   document.getElementById('finalScore').textContent = finalScore;
-  menuPlayBtn.style.display = 'none';
+  playBtn.style.display = 'none';
   submitScoreBtn.style.display = 'block';  // Show submit button for fresh score
-  playAgainBtn.style.display = 'none';     // Initially hidden, shown after submit
+  playBtn.textContent = 'PLAY AGAIN 🚀';   // Set text for after submission
   mainMenuBtn.style.display = 'block';
 } else {
   // No fresh score or just viewing leaderboard normally
   scoreSection.style.display = 'none';
-  menuPlayBtn.style.display = 'block';
+  playBtn.style.display = 'block';
+  playBtn.textContent = 'LFG 🚀';          // Set initial text
   submitScoreBtn.style.display = 'none';
-  playAgainBtn.style.display = 'none';
   mainMenuBtn.style.display = 'none';
 }
 
@@ -79,32 +78,32 @@ async function loadLeaderboard() {
 
 // Fallback: Load and display leaderboard from localStorage
 function loadLocalLeaderboard() {
-   let scores = JSON.parse(localStorage.getItem('moonlanderScores')) || [];
-   
-   // Add current score if not already in list
-   if (finalScore > 0) {
-     scores.push({ score: finalScore, date: new Date().toISOString() });
-     scores.sort((a, b) => b.score - a.score);
-     scores = scores.slice(0, 10); // Keep top 10
-     localStorage.setItem('moonlanderScores', JSON.stringify(scores));
-   }
-   
-   // Populate both leaderboard displays
-   displayLeaderboardEntries(scores, finalScore);
- }
+  let scores = JSON.parse(localStorage.getItem('moonlanderScores')) || [];
+
+  // Add current score if not already in list
+  if (finalScore > 0) {
+    scores.push({ score: finalScore, date: new Date().toISOString() });
+    scores.sort((a, b) => b.score - a.score);
+    scores = scores.slice(0, 10); // Keep top 10
+    localStorage.setItem('moonlanderScores', JSON.stringify(scores));
+  }
+
+  // Populate both leaderboard displays
+  displayLeaderboardEntries(scores, finalScore);
+}
 
 // Display leaderboard entries
 function displayLeaderboardEntries(scores, highlightScore = 0) {
   const leaderboardList = document.getElementById('leaderboardList');
-  
+
   leaderboardList.innerHTML = '';
-  
+
   if (scores.length === 0) {
     const emptyMsg = '<div style="text-align: center; opacity: 0.5; padding: 1rem;">No scores yet</div>';
     leaderboardList.innerHTML = emptyMsg;
     return;
   }
-  
+
   scores.forEach((entry, index) => {
     const div = createLeaderboardEntry(entry, index, highlightScore);
     leaderboardList.appendChild(div);
@@ -131,7 +130,7 @@ function randomizePositions() {
     el.style.left = `${Math.random() * 100}vw`;
     el.style.top = `${Math.random() * 100}vh`;
   });
-  
+
   document.querySelectorAll('.startails > div').forEach(el => {
     const x = Math.random();
     const y = Math.random();
@@ -139,7 +138,7 @@ function randomizePositions() {
     const y2 = Math.random() - 0.5;
     const delay = Math.random();
     const distance = 20;
-    
+
     el.style.left = `${x * 100}vw`;
     el.style.top = `${y * 100}vh`;
     el.style.animationDelay = `${delay * 144}s`;
@@ -157,12 +156,12 @@ function setupWalletButton() {
   const walletButton = document.getElementById('menuConnectWallet');
   const walletMenu = document.getElementById('walletMenu');
   const walletDisconnectBtn = document.getElementById('walletDisconnect');
-  
+
   if (!walletButton) return;
 
   walletButton.addEventListener('click', async (e) => {
     e.stopPropagation();
-    
+
     if (walletConnected) {
       // Toggle menu if already connected
       walletMenu.style.display = walletMenu.style.display === 'none' ? 'block' : 'none';
@@ -221,16 +220,19 @@ if (document.readyState === 'loading') {
 // Update menu wallet button when wallet connects
 function updateMenuWalletDisplay(address) {
   const btn = document.getElementById('menuConnectWallet');
-  const playBtn = document.getElementById('menuPlayBtn');
+  const playBtn = document.getElementById('playBtn');
   const balanceDiv = document.getElementById('menuBalanceDisplay');
-  
+
   if (address) {
     document.getElementById('menuWalletStatus').textContent = `${address.slice(0, 6)}...${address.slice(-4)}`;
-    playBtn.style.display = 'block';
+    if (playBtn) {
+      playBtn.style.display = 'block';
+      playBtn.textContent = 'LFG 🚀';  // Ensure proper text
+    }
     walletConnected = true;
   } else {
     document.getElementById('menuWalletStatus').textContent = 'CONNECT WALLET';
-    playBtn.style.display = 'none';
+    if (playBtn) playBtn.style.display = 'none';
     balanceDiv.style.display = 'none';
     walletConnected = false;
     if (document.getElementById('walletMenu')) {
@@ -241,11 +243,10 @@ function updateMenuWalletDisplay(address) {
 
 // Update menu balance display
 function updateMenuBalanceDisplay(balanceFormatted) {
-  const balanceNum = parseFloat(balanceFormatted);
-  if (balanceNum > 0) {
+  if (balanceFormatted) {
     const balanceDiv = document.getElementById('menuBalanceDisplay');
     const balanceText = document.getElementById('menuBalanceText');
-    balanceText.textContent = `${balanceNum.toFixed(2)} m00nad`;
+    balanceText.textContent = balanceFormatted;
     balanceDiv.style.display = 'block';
   }
 }
@@ -264,7 +265,7 @@ randomizePositions();
 loadLeaderboard();
 
 // Handle page flow based on URL parameters
-window.addEventListener('load', function() {
+window.addEventListener('load', function () {
   setTimeout(handlePageFlow, 500);
 });
 
@@ -272,7 +273,7 @@ function handlePageFlow() {
   const urlParams = new URLSearchParams(window.location.search);
   const score = urlParams.get('score');
   const landed = urlParams.get('landed');
-  
+
   if (score && landed !== null) {
     hideWelcomeSection();
     showPlayAgainButton();
@@ -281,7 +282,7 @@ function handlePageFlow() {
     showWelcomeSection();
     showPlayButton();
   }
-  
+
   loadGameStats();
 }
 
@@ -296,17 +297,23 @@ function hideWelcomeSection() {
 }
 
 function showPlayButton() {
-  const playBtn = document.getElementById('menuPlayBtn');
-  const playAgain = document.getElementById('playAgain');
-  if (playBtn) playBtn.style.display = 'inline-block';
-  if (playAgain) playAgain.style.display = 'none';
+  const playBtn = document.getElementById('playBtn');
+  const submitScoreBtn = document.getElementById('submitScoreBtn');
+  if (playBtn) {
+    playBtn.style.display = 'inline-block';
+    playBtn.textContent = 'LFG 🚀';
+  }
+  if (submitScoreBtn) submitScoreBtn.style.display = 'none';
 }
 
 function showPlayAgainButton() {
-  const playBtn = document.getElementById('menuPlayBtn');
-  const playAgain = document.getElementById('playAgain');
-  if (playBtn) playBtn.style.display = 'none';
-  if (playAgain) playAgain.style.display = 'inline-block';
+  const playBtn = document.getElementById('playBtn');
+  const submitScoreBtn = document.getElementById('submitScoreBtn');
+  if (submitScoreBtn) submitScoreBtn.style.display = 'none';
+  if (playBtn) {
+    playBtn.style.display = 'inline-block';
+    playBtn.textContent = 'PLAY AGAIN 🚀';
+  }
 }
 
 function highlightPlayerScore(playerScore) {
@@ -325,11 +332,11 @@ function loadGameStats() {
   const totalGamesEl = document.getElementById('totalGames');
   const totalBurnedEl = document.getElementById('totalBurned');
   const topScoreEl = document.getElementById('topScore');
-  
+
   if (totalGamesEl) totalGamesEl.textContent = '🔄';
   if (totalBurnedEl) totalBurnedEl.textContent = '🔄';
   if (topScoreEl) topScoreEl.textContent = '🔄';
-  
+
   setTimeout(() => {
     const firstEntry = document.querySelector('.leaderboard-entry');
     if (firstEntry && topScoreEl) {
@@ -342,21 +349,20 @@ function loadGameStats() {
     } else if (topScoreEl) {
       topScoreEl.textContent = 'No scores yet';
     }
-    
+
     if (totalGamesEl) totalGamesEl.textContent = 'Many!';
     if (totalBurnedEl) totalBurnedEl.textContent = 'Millions!';
   }, 3000);
 }
 
 // Handle button clicks
-document.addEventListener('DOMContentLoaded', function() {
-  const playBtn = document.getElementById('menuPlayBtn');
+document.addEventListener('DOMContentLoaded', function () {
+  const playBtn = document.getElementById('playBtn');
   const submitBtn = document.getElementById('submitScoreBtn');
-  const playAgain = document.getElementById('playAgain');
   const mainMenu = document.getElementById('mainMenu');
-  
+
   if (playBtn) {
-    playBtn.addEventListener('click', function() {
+    playBtn.addEventListener('click', function () {
       // Trigger payment flow
       if (window.contractIntegration && window.contractIntegration.payAndPlayGame) {
         window.contractIntegration.payAndPlayGame();
@@ -365,13 +371,13 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-  
+
   if (submitBtn) {
-    submitBtn.addEventListener('click', async function() {
+    submitBtn.addEventListener('click', async function () {
       // Submit score to contract
       submitBtn.disabled = true;
       submitBtn.textContent = 'SUBMITTING...';
-      
+
       try {
         if (!window.contractIntegration || !window.contractIntegration.submitScore) {
           showModal('Contract integration not available. Please refresh the page.', 'Error');
@@ -379,14 +385,19 @@ document.addEventListener('DOMContentLoaded', function() {
           submitBtn.textContent = 'SUBMIT SCORE';
           return;
         }
-        
+
         // Call submitScore with the final score and landed status
         const success = await window.contractIntegration.submitScore(finalScore, landed);
-        
+
         if (success) {
           // Show play again button after successful submission
           submitBtn.style.display = 'none';
-          playAgain.style.display = 'block';
+          if (playBtn) {
+            playBtn.style.display = 'block';
+            playBtn.textContent = 'PLAY AGAIN 🚀';
+          }
+          const mainMenuBtn = document.getElementById('mainMenu');
+          if (mainMenuBtn) mainMenuBtn.style.display = 'block';
         } else {
           // If submission failed, reset button
           submitBtn.disabled = false;
@@ -400,22 +411,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-  
-  if (playAgain) {
-    playAgain.addEventListener('click', function() {
-      // Trigger payment flow for another game
-      if (window.contractIntegration && window.contractIntegration.payAndPlayGame) {
-        window.contractIntegration.payAndPlayGame();
-      } else {
-        alert('Please connect your wallet first');
-      }
-    });
-  }
-  
+
   if (mainMenu) {
-    mainMenu.addEventListener('click', function() {
+    mainMenu.addEventListener('click', function () {
       // Return to main menu (clear URL parameters)
-      window.location.href = 'leaderboard.html';
+      window.location.href = 'index.html';
     });
   }
 });

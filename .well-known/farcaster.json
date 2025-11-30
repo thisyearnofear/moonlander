@@ -1,4 +1,9 @@
 {
+  "accountAssociation": {
+    "header": "eyJmaWQiOjUyNTQsInR5cGUiOiJhdXRoIiwia2V5IjoiMHhkODY1Q2Q3Y2NjOTFGODM2OTJhQjMzMDk4MWMzRTNlOWQ3QTA1MjZBIn0",
+    "payload": "eyJkb21haW4iOiJtMDBubGFuZGVyLm5ldGxpZnkuYXBwIn0",
+    "signature": "uioQWgSZKXOc6J1HsBVEMO2AdeC/WrfVRzncLt2+3TYNkl/KM0OFOZl8i0BUnlhQ4sHCED8aY//CI6oF4I8JLhs="
+  },
   "miniapp": {
     "version": "1",
     "name": "m00nlander",
@@ -6,12 +11,20 @@
     "iconUrl": "https://m00nlander.netlify.app/images/icon-1024.png",
     "splashImageUrl": "https://m00nlander.netlify.app/images/splash-icon.png",
     "splashBackgroundColor": "#000000",
-    "subtitle": "Land safely on the moon with m00nad",
-    "description": "A classic lunar lander game with challenging terrain, fuel management, and crypto payments. Navigate your spacecraft to smooth landing zones before running out of fuel. Win m00nad tokens on Monad.",
+    "subtitle": "Land safely, m00n dat",
+    "description": "Classic lunar lander game with challenging terrain and fuel management. Navigate your spacecraft to smooth landing zones.",
     "primaryCategory": "games",
-    "tags": ["game", "arcade", "skill", "lunar", "classic", "crypto", "monad"],
-    "ogTitle": "m00nlander 🚀",
-    "ogDescription": "Play m00nlander on Farcaster. Classic lunar lander game with Monad rewards.",
+    "tags": [
+      "game",
+      "arcade",
+      "skill",
+      "lunar",
+      "classic",
+      "crypto",
+      "monad"
+    ],
+    "ogTitle": "m00nlander",
+    "ogDescription": "Play m00nlander on Farcaster. Classic lunar lander game on Monad.",
     "ogImageUrl": "https://m00nlander.netlify.app/images/og-1200x630.png",
     "screenshotUrls": [
       "https://m00nlander.netlify.app/images/screenshot-1-1284x2778.png",
