@@ -8,6 +8,7 @@ let isInitializing = true;
 
 /**
  * Initialize Farcaster SDK and prepare game for display
+ * Note: sdk.actions.ready() is now called in game.html after the game loads
  */
 async function initFarcasterSDK() {
     try {
@@ -28,10 +29,7 @@ async function initFarcasterSDK() {
             console.warn('Could not get Farcaster context:', error);
         }
         
-        // Signal that the app is ready to display
-        // This hides the splash screen
-        await sdk.actions.ready();
-        console.log('m00nlander mini app ready');
+        console.log('m00nlander mini app SDK initialized');
         
         isInitializing = false;
     } catch (error) {

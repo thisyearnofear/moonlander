@@ -264,22 +264,23 @@ window.addEventListener('balanceUpdated', (e) => {
 randomizePositions();
 loadLeaderboard();
 
-// Initialize Farcaster SDK
+// Initialize Farcaster SDK (ready() is called in game.html after page load)
 async function initFarcaster() {
   try {
-    if (window.farcaster && window.farcaster.sdk) {
-      const sdk = window.farcaster.sdk;
-
-      // Initialize the SDK
-      await sdk.actions.ready();
-      console.log('Farcaster SDK ready');
+    if (window.farcasterSDK) {
+      const sdk = window.farcasterSDK;
+      console.log('Farcaster SDK available on leaderboard');
 
       // Check context if needed
-      const context = await sdk.context;
-      console.log('Farcaster context:', context);
+      try {
+        const context = await sdk.context;
+        console.log('Farcaster context:', context);
+      } catch (error) {
+        console.log('Not running in Farcaster context');
+      }
     }
   } catch (error) {
-    console.error('Failed to initialize Farcaster SDK:', error);
+    console.error('Failed to access Farcaster SDK:', error);
   }
 }
 

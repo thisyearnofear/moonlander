@@ -403,6 +403,38 @@
   <script src="js/moonlander-abi.js"></script>
   <script src="js/contract-integration.js"></script>
   <script src="js/leaderboard-events.js"></script>
+
+  <!-- Farcaster Mini App SDK -->
+  <script type="module">
+    import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
+    
+    window.farcasterSDK = sdk;
+    window.sdkReady = Promise.resolve(sdk);
+
+    // Call ready() when leaderboard is loaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', async () => {
+        setTimeout(async () => {
+          try {
+            await sdk.actions.ready();
+            console.log('Farcaster Mini App ready on leaderboard');
+          } catch (error) {
+            console.warn('Could not call sdk.actions.ready():', error);
+          }
+        }, 500);
+      });
+    } else {
+      setTimeout(async () => {
+        try {
+          await sdk.actions.ready();
+          console.log('Farcaster Mini App ready on leaderboard');
+        } catch (error) {
+          console.warn('Could not call sdk.actions.ready():', error);
+        }
+      }, 500);
+    }
+  </script>
+  
   <script src="leaderboard.js"></script>
 </body>
 

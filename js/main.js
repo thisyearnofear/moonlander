@@ -12,14 +12,6 @@ window.onload = function () {
         initTouchControls();
 
         document.addEventListener('visibilitychange', onLoseFocus);
-
-        // Signal Farcaster SDK that app is ready (hides splash screen)
-        // This is safe even if SDK isn't available
-        if (window.farcasterSDK && window.farcasterSDK.actions) {
-            window.farcasterSDK.actions.ready().catch(err => {
-                console.log('Running without Farcaster context');
-            });
-        }
     }, 0);
 }
 
@@ -49,11 +41,6 @@ function init() {
     initTouchControls(); // Initialize mobile controls
 
     playComms();
-
-    // Initialize Farcaster SDK
-    if (window.farcaster && window.farcaster.sdk) {
-        window.farcaster.sdk.actions.ready().catch(console.error);
-    }
 }
 
 function initTHREE() {
