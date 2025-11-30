@@ -3,12 +3,12 @@ function initHud() {
     hudHeight = window.innerHeight;
 
     cameraHud = new THREE.OrthographicCamera(
-        -halfWidth, 
-        halfWidth, 
-        halfHeight, 
-        -halfHeight, 
-        0, 
-        1000 );
+        -halfWidth,
+        halfWidth,
+        halfHeight,
+        -halfHeight,
+        0,
+        1000);
     sceneHud = new THREE.Scene();
     hudCanvas = document.createElement('canvas');
     hudContext = hudCanvas.getContext('2d');
@@ -16,12 +16,20 @@ function initHud() {
     hudCanvas.height = hudHeight;
 
     hudTexture = new THREE.Texture(hudCanvas);
-    const hudMaterial = new THREE.MeshBasicMaterial( {map: hudTexture} );
+    const hudMaterial = new THREE.MeshBasicMaterial({ map: hudTexture });
     hudMaterial.transparent = true;
+    hudMaterial.depthTest = false;
 
     const planeGeometry = new THREE.PlaneGeometry(gameWidth, gameHeight);
     const hudPlane = new THREE.Mesh(planeGeometry, hudMaterial);
+    hudPlane.position.z = 500;
     sceneHud.add(hudPlane);
+    
+    // Setup multipliers overlay canvas
+    multipliersCanvas = document.getElementById('multipliersCanvas');
+    multipliersContext = multipliersCanvas.getContext('2d');
+    multipliersCanvas.width = hudWidth;
+    multipliersCanvas.height = hudHeight;
 }
 
 function renderHud() {
@@ -40,7 +48,7 @@ function renderHud() {
 function fillLeftInfoPanel() {
     hudContext.textAlign = 'left';
     hudContext.fillStyle = infoPanelTextColor;
-    hudContext.font = "Normal "+infoPanelFontSize+"px Courier New";
+    hudContext.font = "Normal " + infoPanelFontSize + "px Courier New";
 
     // Check if we're on mobile and adjust positioning to avoid top HUD
     const isMobile = window.innerWidth < 600;
@@ -49,28 +57,28 @@ function fillLeftInfoPanel() {
 
     hudContext.fillText(
         "SCORE".padEnd(7, " ") + currentScore.toString().padStart(4, "0"),
-        hudWidth*infoPanelRelativeOffsetX,
-        hudHeight*(infoPanelRelativeOffsetY+extraOffset+0*infoPanelRelativeOffsetYStep));
+        hudWidth * infoPanelRelativeOffsetX,
+        hudHeight * (infoPanelRelativeOffsetY + extraOffset + 0 * infoPanelRelativeOffsetYStep));
     hudContext.fillText(
-        "TIME".padEnd(7, " ") + (currentTime/59 | 0).toString().padStart(1, "0")+":"+(currentTime%59).toFixed(0).padStart(2, "0"),
-        hudWidth*infoPanelRelativeOffsetX,
-        hudHeight*(infoPanelRelativeOffsetY+extraOffset+1*infoPanelRelativeOffsetYStep));
+        "TIME".padEnd(7, " ") + (currentTime / 59 | 0).toString().padStart(1, "0") + ":" + (currentTime % 59).toFixed(0).padStart(2, "0"),
+        hudWidth * infoPanelRelativeOffsetX,
+        hudHeight * (infoPanelRelativeOffsetY + extraOffset + 1 * infoPanelRelativeOffsetYStep));
     hudContext.fillText(
         "FUEL".padEnd(7, " ") + currentFuel.toFixed(0).padStart(4, "0"),
-        hudWidth*infoPanelRelativeOffsetX,
-        hudHeight*(infoPanelRelativeOffsetY+extraOffset+2*infoPanelRelativeOffsetYStep));
-    if(isAlerted) {
+        hudWidth * infoPanelRelativeOffsetX,
+        hudHeight * (infoPanelRelativeOffsetY + extraOffset + 2 * infoPanelRelativeOffsetYStep));
+    if (isAlerted) {
         let fuelAlertText;
-        if(hasFuel) {
+        if (hasFuel) {
             fuelAlertText = "LOW ON FUEL";
         }
-        else{
+        else {
             fuelAlertText = "OUT OF FUEL";
         }
         hudContext.fillText(
             fuelAlertText,
-            hudWidth*infoPanelRelativeOffsetX,
-            hudHeight*(infoPanelRelativeOffsetY+extraOffset+3*infoPanelRelativeOffsetYStep));
+            hudWidth * infoPanelRelativeOffsetX,
+            hudHeight * (infoPanelRelativeOffsetY + extraOffset + 3 * infoPanelRelativeOffsetYStep));
     }
 }
 
@@ -81,45 +89,45 @@ function fillRightInfoPanel() {
 
     hudContext.textAlign = 'right';
     hudContext.fillStyle = infoPanelTextColor;
-    hudContext.font = "Normal "+infoPanelFontSize+"px Courier New";
+    hudContext.font = "Normal " + infoPanelFontSize + "px Courier New";
 
     // Always show altitude (critical info)
     hudContext.fillText(
         isMobile ? "ALT".padEnd(8, " ") : "ALTITUDE".padEnd(20, " ") + altitude.toFixed(0).padStart(4, "0"),
-        hudWidth*(1-infoPanelRelativeOffsetX),
-        hudHeight*(infoPanelRelativeOffsetY+extraOffset+0*infoPanelRelativeOffsetYStep));
+        hudWidth * (1 - infoPanelRelativeOffsetX),
+        hudHeight * (infoPanelRelativeOffsetY + extraOffset + 0 * infoPanelRelativeOffsetYStep));
 
     // Show altitude value on next line for mobile
     if (isMobile) {
         hudContext.fillText(
             altitude.toFixed(0).padStart(4, "0"),
-            hudWidth*(1-infoPanelRelativeOffsetX),
-            hudHeight*(infoPanelRelativeOffsetY+extraOffset+0.5*infoPanelRelativeOffsetYStep));
+            hudWidth * (1 - infoPanelRelativeOffsetX),
+            hudHeight * (infoPanelRelativeOffsetY + extraOffset + 0.5 * infoPanelRelativeOffsetYStep));
     }
 
     // Vertical speed (critical for landing)
     hudContext.fillText(
         isMobile ? "V-SPD".padEnd(8, " ") : "VERTICAL SPEED".padEnd(18, " ") + (-velocityY).toFixed(1).padStart(6, " "),
-        hudWidth*(1-infoPanelRelativeOffsetX),
-        hudHeight*(infoPanelRelativeOffsetY+extraOffset+1*infoPanelRelativeOffsetYStep));
+        hudWidth * (1 - infoPanelRelativeOffsetX),
+        hudHeight * (infoPanelRelativeOffsetY + extraOffset + 1 * infoPanelRelativeOffsetYStep));
 
     if (isMobile) {
         hudContext.fillText(
             (-velocityY).toFixed(1).padStart(6, " "),
-            hudWidth*(1-infoPanelRelativeOffsetX),
-            hudHeight*(infoPanelRelativeOffsetY+extraOffset+1.5*infoPanelRelativeOffsetYStep));
+            hudWidth * (1 - infoPanelRelativeOffsetX),
+            hudHeight * (infoPanelRelativeOffsetY + extraOffset + 1.5 * infoPanelRelativeOffsetYStep));
     }
 
     // Hide horizontal speed and rotation angle on very small screens
     if (!isMobile) {
         hudContext.fillText(
             "HORIZONTAL SPEED".padEnd(18, " ") + velocityX.toFixed(1).padStart(6, " "),
-            hudWidth*(1-infoPanelRelativeOffsetX),
-            hudHeight*(infoPanelRelativeOffsetY+extraOffset+2*infoPanelRelativeOffsetYStep));
+            hudWidth * (1 - infoPanelRelativeOffsetX),
+            hudHeight * (infoPanelRelativeOffsetY + extraOffset + 2 * infoPanelRelativeOffsetYStep));
         hudContext.fillText(
-            "ROTATION ANGLE".padEnd(18, " ") + (-lander.rotation.z * (180/Math.PI)).toFixed(1).padStart(6, " "),
-            hudWidth*(1-infoPanelRelativeOffsetX),
-            hudHeight*(infoPanelRelativeOffsetY+extraOffset+3*infoPanelRelativeOffsetYStep));
+            "ROTATION ANGLE".padEnd(18, " ") + (-lander.rotation.z * (180 / Math.PI)).toFixed(1).padStart(6, " "),
+            hudWidth * (1 - infoPanelRelativeOffsetX),
+            hudHeight * (infoPanelRelativeOffsetY + extraOffset + 3 * infoPanelRelativeOffsetYStep));
     }
 }
 
@@ -129,35 +137,35 @@ function fillMainPanel() {
     // Check if we're on a small mobile screen
     const isMobile = window.innerWidth < 600;
 
-    if(isGameOver) {
-        hudContext.font = "Normal "+mainPanelFontSize+"px Courier New";
+    if (isGameOver) {
+        hudContext.font = "Normal " + mainPanelFontSize + "px Courier New";
         hudContext.fillStyle = mainPanelTextColor;
 
         // On mobile, make the text more compact
         if (isMobile) {
             hudContext.fillText(
                 "TAP TO PLAY",
-                hudWidth*mainPanelRelativeOffsetX,
-                hudHeight*(mainPanelRelativeOffsetY+0*mainPanelRelativeOffsetYStep));
+                hudWidth * mainPanelRelativeOffsetX,
+                hudHeight * (mainPanelRelativeOffsetY + 0 * mainPanelRelativeOffsetYStep));
         } else {
             hudContext.fillText(
                 "PRESS ANY KEY TO PLAY",
-                hudWidth*mainPanelRelativeOffsetX,
-                hudHeight*(mainPanelRelativeOffsetY+0*mainPanelRelativeOffsetYStep));
+                hudWidth * mainPanelRelativeOffsetX,
+                hudHeight * (mainPanelRelativeOffsetY + 0 * mainPanelRelativeOffsetYStep));
             hudContext.fillText(
                 "ARROW KEYS TO MOVE",
-                hudWidth*mainPanelRelativeOffsetX,
-                hudHeight*(mainPanelRelativeOffsetY+1*mainPanelRelativeOffsetYStep));
+                hudWidth * mainPanelRelativeOffsetX,
+                hudHeight * (mainPanelRelativeOffsetY + 1 * mainPanelRelativeOffsetYStep));
         }
     }
-    else if(isBetweenRounds) {
-        hudContext.font = "Normal "+statsPanelFontSize+"px Courier New";
+    else if (isBetweenRounds) {
+        hudContext.font = "Normal " + statsPanelFontSize + "px Courier New";
         hudContext.fillStyle = statsPanelTextColor;
 
         let landingText, scoreText, fuelText, gameOverText;
 
         gameOverText = "";
-        if(hasLanded) {
+        if (hasLanded) {
             // More compact landing messages for mobile
             landingText = isMobile ? (hasFuel ? "LANDED!" : "LANDED") : "SUCCESSFULLY LANDED";
             fuelText = isMobile ? (fuelChange >= 0 ? `+${fuelChange} FUEL` : `${fuelChange} FUEL`) : fuelChange.toFixed(0) + " FUEL UNITS GAINED";
@@ -187,7 +195,7 @@ function fillMainPanel() {
 
             fuelText = isMobile ? (fuelChange >= 0 ? `+${fuelChange} FUEL` : `${fuelChange} FUEL`) : fuelChange.toFixed(0) + " FUEL UNITS LOST";
 
-            if(!hasFuel) {
+            if (!hasFuel) {
                 fuelText = isMobile ? "NO FUEL" : "OUT OF FUEL";
                 gameOverText = isMobile ? "GAME OVER" : "GAME OVER";
             }
@@ -199,48 +207,51 @@ function fillMainPanel() {
 
         hudContext.fillText(
             landingText,
-            hudWidth*statsPanelRelativeOffsetX,
-            hudHeight*(statsPanelRelativeOffsetY+currentYStep*statsPanelRelativeOffsetYStep));
+            hudWidth * statsPanelRelativeOffsetX,
+            hudHeight * (statsPanelRelativeOffsetY + currentYStep * statsPanelRelativeOffsetYStep));
         currentYStep += lineOffset;
 
         if (scoreText) {
             hudContext.fillText(
                 scoreText,
-                hudWidth*statsPanelRelativeOffsetX,
-                hudHeight*(statsPanelRelativeOffsetY+currentYStep*statsPanelRelativeOffsetYStep));
+                hudWidth * statsPanelRelativeOffsetX,
+                hudHeight * (statsPanelRelativeOffsetY + currentYStep * statsPanelRelativeOffsetYStep));
             currentYStep += lineOffset;
         }
 
         if (fuelText) {
             hudContext.fillText(
                 fuelText,
-                hudWidth*statsPanelRelativeOffsetX,
-                hudHeight*(statsPanelRelativeOffsetY+currentYStep*statsPanelRelativeOffsetYStep));
+                hudWidth * statsPanelRelativeOffsetX,
+                hudHeight * (statsPanelRelativeOffsetY + currentYStep * statsPanelRelativeOffsetYStep));
             currentYStep += lineOffset;
         }
 
         if (gameOverText) {
             hudContext.fillText(
                 gameOverText,
-                hudWidth*statsPanelRelativeOffsetX,
-                hudHeight*(statsPanelRelativeOffsetY+currentYStep*statsPanelRelativeOffsetYStep));
+                hudWidth * statsPanelRelativeOffsetX,
+                hudHeight * (statsPanelRelativeOffsetY + currentYStep * statsPanelRelativeOffsetYStep));
         }
     }
 }
 
 function drawMultipliers() {
-    if(isGameOver) return;
+    if (isGameOver) return;
+    
+    // Clear the multipliers overlay
+    multipliersContext.clearRect(0, 0, multipliersCanvas.width, multipliersCanvas.height);
 
-    hudContext.textAlign = 'center';
-    hudContext.fillStyle = multiplierFontColor;
+    multipliersContext.textAlign = 'center';
+    multipliersContext.fillStyle = multiplierFontColor;
 
     let fontSize = multiplierFontSize;
-    if(isZoomed) fontSize *= zoom;
-    hudContext.font = "Normal "+fontSize+"px Courier New";
+    if (isZoomed) fontSize *= zoom;
+    multipliersContext.font = "Normal " + fontSize + "px Courier New";
     var i;
-    for(i = 0; i < scoreMultipliers.length; i++) {
+    for (i = 0; i < scoreMultipliers.length; i++) {
         let mul = scoreMultipliers[i];
-        if(mul < 2) continue;
+        if (mul < 2) continue;
 
         let leftVector = lineSegments[i][0];
         let rightVector = lineSegments[i][1];
@@ -249,7 +260,11 @@ function drawMultipliers() {
         pointY = leftVector.y;
 
         let hudPoint = worldToHudCoord(pointX, pointY);
-        hudContext.fillText("X"+mul, hudPoint[0], hudPoint[1] + fontSize);
+        const text = "X" + mul;
+        
+        // Draw text
+        multipliersContext.fillStyle = multiplierFontColor;
+        multipliersContext.fillText(text, hudPoint[0], hudPoint[1] + fontSize);
     }
 }
 
@@ -277,7 +292,7 @@ function formatBalanceText(balance) {
 function worldToHudCoord(wx, wy) {
     let hx, hy;
 
-    if(isZoomed) {
+    if (isZoomed) {
         wx -= camera.position.x;
         wy -= camera.position.y;
         wx *= zoom;

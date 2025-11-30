@@ -96,7 +96,7 @@ function adjustHUDForScreen() {
 }
 
 const multiplierFontSize = 15;
-const multiplierFontColor = "rgba(255,255,255,1)";
+const multiplierFontColor = "rgba(255,255,0,1)";
 
 const particleEmitPointOffset = new THREE.Vector3(0, -landerScale/2.5, 3);
 

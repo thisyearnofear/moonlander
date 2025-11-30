@@ -549,7 +549,7 @@ function clearWalletState() {
  */
 async function payAndPlayGame() {
   if (!currentAccount) {
-    await showModal('Please connect your wallet to pay and play.', 'Wallet Not Connected');
+    await showModal('Please connect your wallet to pay 100k m00nad and play.', 'Wallet Not Connected');
     return false;
   }
 
