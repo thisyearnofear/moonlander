@@ -167,6 +167,26 @@ function placeTerrainSegment(leftPoint, rightPoint) {
     terrainMesh.rotation.z = angle;
 
     terrainMeshGroup.add(terrainMesh);
+
+    // Create purple fill below the terrain line
+    const fillShape = new THREE.Shape();
+    const fillLeft = new THREE.Vector2(leftPoint[0] - halfWidth, leftPoint[1] - halfHeight);
+    const fillRight = new THREE.Vector2(rightPoint[0] - halfWidth, rightPoint[1] - halfHeight);
+
+    fillShape.moveTo(fillLeft.x, fillLeft.y);
+    fillShape.lineTo(fillRight.x, fillRight.y);
+    fillShape.lineTo(fillRight.x, -halfHeight);
+    fillShape.lineTo(fillLeft.x, -halfHeight);
+    fillShape.lineTo(fillLeft.x, fillLeft.y);
+
+    const fillGeometry = new THREE.ShapeGeometry(fillShape);
+    const fillMaterial = new THREE.MeshBasicMaterial({ color: 0x6a0dad });
+    const fillMesh = new THREE.Mesh(fillGeometry, fillMaterial);
+
+    // Position slightly behind the white line
+    fillMesh.position.z = -1;
+
+    terrainMeshGroup.add(fillMesh);
 }
 
 function createStars() {
@@ -470,6 +490,7 @@ function landed(segmentIndex) {
     let mul = scoreMultipliers[segmentIndex];
     scoreChange = scorePerLanding * mul
     currentScore += scoreChange;
+    totalLandings++;
 
     fuelChange = Math.random() * (fuelGainMax - fuelGainMin) + fuelGainMin;
     fuelChange += fuelGainExtra * mul;
@@ -501,12 +522,12 @@ function endGame() {
 
     // Save score to localStorage for later submission
     localStorage.setItem('lastScore', currentScore);
-    localStorage.setItem('lastLanded', hasLanded ? 1 : 0);
+    localStorage.setItem('lastLanded', totalLandings > 0 ? 1 : 0);
 
     // Redirect to leaderboard with score
     // Mark as fresh so they can submit it
     setTimeout(() => {
-        window.location.href = `index.html?score=${currentScore}&landed=${hasLanded ? 1 : 0}&fresh=true`;
+        window.location.href = `index.html?score=${currentScore}&landed=${totalLandings > 0 ? 1 : 0}&fresh=true`;
     }, 1500);
 }
 
@@ -540,6 +561,7 @@ function resetGame() {
 
     currentScore = 0;
     currentTime = 0;
+    totalLandings = 0;
 
     respawn();
 }

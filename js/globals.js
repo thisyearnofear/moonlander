@@ -2,6 +2,7 @@ let scene, camera, renderer;
 
 let sceneHud, cameraHud;
 let hudCanvas, hudContext, hudTexture;
+let multipliersCanvas, multipliersContext;
 
 let hudWidth, hudHeight;
 
@@ -32,6 +33,7 @@ let isGameOver = true;
 let isBetweenRounds = false;
 let isDebugOn = false;
 let hasLanded = false;
+let totalLandings = 0;
 
 let currentFuel = 1000;
 let hasFuel = true;
