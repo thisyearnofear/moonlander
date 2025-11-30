@@ -644,31 +644,40 @@ body:before {
     min-height: auto;
     width: 95%;
     max-width: none;
-    padding: 1rem 0;
+    padding: 0.5rem 0;
   }
 
   .top-bar {
     flex-direction: column;
-    gap: 1rem;
-    padding: 1.2rem 1.5rem;
-  }
-
-  .top-bar .title {
-    font-size: 1.5rem;
-  }
-
-  .wallet-section {
-    width: 100%;
+    gap: 0.75rem;
+    padding: 1rem;
     align-items: center;
   }
 
+  .top-bar .title {
+    font-size: 1.3rem;
+    text-align: center;
+  }
+
+  .wallet-section {
+    width: auto;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
   .wallet-button {
-    width: 100%;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  .balance-info {
+    font-size: 0.75rem;
     text-align: center;
   }
 
   .content-section {
-    padding: 1.5rem;
+    padding: 1rem;
     gap: 1rem;
   }
 

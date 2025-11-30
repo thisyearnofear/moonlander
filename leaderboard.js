@@ -264,6 +264,32 @@ window.addEventListener('balanceUpdated', (e) => {
 randomizePositions();
 loadLeaderboard();
 
+// Initialize Farcaster SDK
+async function initFarcaster() {
+  try {
+    if (window.farcaster && window.farcaster.sdk) {
+      const sdk = window.farcaster.sdk;
+
+      // Initialize the SDK
+      await sdk.actions.ready();
+      console.log('Farcaster SDK ready');
+
+      // Check context if needed
+      const context = await sdk.context;
+      console.log('Farcaster context:', context);
+    }
+  } catch (error) {
+    console.error('Failed to initialize Farcaster SDK:', error);
+  }
+}
+
+// Call initialization
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initFarcaster);
+} else {
+  initFarcaster();
+}
+
 // Handle page flow based on URL parameters
 window.addEventListener('load', function () {
   setTimeout(handlePageFlow, 500);

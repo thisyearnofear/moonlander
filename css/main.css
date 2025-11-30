@@ -35,7 +35,8 @@ canvas {
     gap: 8px;
     pointer-events: auto;
     width: 100%;
-    max-width: 280px; /* Prevent buttons from being too wide on large screens */
+    max-width: 280px;
+    /* Prevent buttons from being too wide on large screens */
 }
 
 .hud-button {
@@ -145,6 +146,7 @@ canvas {
         opacity: 0;
         transform: scale(0.9) translateY(-30px);
     }
+
     to {
         opacity: 1;
         transform: scale(1) translateY(0);
@@ -221,5 +223,35 @@ canvas {
 
     .cta-button {
         font-size: 15px;
+    }
+
+    /* Compact HUD for mobile */
+    .in-game-hud {
+        top: 5px;
+        max-width: 60%;
+        /* Limit width to avoid overlapping sides */
+    }
+
+    .hud-center {
+        gap: 4px;
+        max-width: 200px;
+    }
+
+    .hud-button {
+        padding: 6px 10px;
+        font-size: 10px;
+    }
+
+    .hud-wallet-info {
+        padding: 4px 8px;
+        gap: 2px;
+    }
+
+    #hudWalletAddress {
+        font-size: 9px;
+    }
+
+    .hud-balance {
+        font-size: 10px;
     }
 }
