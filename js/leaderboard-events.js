@@ -58,16 +58,16 @@ async function loadLeaderboardFromContract() {
       console.log('Leaderboard load already in progress...');
       return leaderboardCache.data;
     }
-    
+
     // Use cached data if it's less than 30 seconds old
     if (cacheAge < 30000 && leaderboardCache.data.length > 0) {
       console.log('Using cached leaderboard data');
       return leaderboardCache.data;
     }
-    
+
     leaderboardCache.isLoading = true;
     console.log('Loading leaderboard from enhanced contract...');
-    
+
     const provider = new ethers.providers.JsonRpcProvider(LEADERBOARD_CONFIG.RPC_URL);
     const contract = new ethers.Contract(
       LEADERBOARD_CONFIG.MOONLANDER_CONTRACT,
@@ -77,17 +77,17 @@ async function loadLeaderboardFromContract() {
 
     // Use event scanning since contract doesn't have getTopScores method
     let topScores = [];
-    
+
     try {
       // Event scanning
       const currentBlock = await provider.getBlockNumber();
       const searchFromBlock = Math.max(0, currentBlock - 200);
-      
+
       console.log(`Scanning events from block ${searchFromBlock} to ${currentBlock}`);
-      
+
       let allEvents = [];
       const blockChunkSize = 100;
-      
+
       for (let i = searchFromBlock; i <= currentBlock; i += blockChunkSize) {
         const toBlock = Math.min(i + blockChunkSize - 1, currentBlock);
         try {
@@ -102,7 +102,7 @@ async function loadLeaderboardFromContract() {
           console.warn(`Failed to query blocks ${i}-${toBlock}:`, err.message);
         }
       }
-      
+
       // Parse events
       const scores = [];
       const iface = new ethers.utils.Interface(window.MOONLANDER_ABI || []);
@@ -129,7 +129,7 @@ async function loadLeaderboardFromContract() {
         if (b.score !== a.score) return b.score - a.score;
         return a.timestamp - b.timestamp;
       });
-      
+
       topScores = validScores.slice(0, 100);
     } catch (contractError) {
       console.warn('Event scanning failed:', contractError.message);
@@ -158,7 +158,7 @@ async function loadLeaderboardFromContract() {
  */
 function addOptimisticScore(player, score, landed) {
   if (landed !== 1) return; // Only show safe landings
-  
+
   const optimisticScore = {
     player: player,
     score: score,
@@ -171,16 +171,16 @@ function addOptimisticScore(player, score, landed) {
 
   // Add to cache temporarily
   leaderboardCache.data.unshift(optimisticScore);
-  
+
   // Re-sort and display
   leaderboardCache.data.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
     return a.timestamp - b.timestamp;
   });
-  
+
   // Update display
   displayLeaderboardFromCache();
-  
+
   console.log('Added optimistic score:', score);
 }
 
@@ -190,16 +190,16 @@ function addOptimisticScore(player, score, landed) {
 function displayLeaderboardFromCache() {
   const leaderboardList = document.getElementById('leaderboardList');
   if (!leaderboardList) return;
-  
+
   leaderboardList.innerHTML = '';
-  
+
   const scores = leaderboardCache.data.slice(0, 100); // Top 100
-  
+
   if (scores.length === 0) {
     leaderboardList.innerHTML = '<div style="text-align: center; color: #999; padding: 40px; font-size: 14px;">No safe landings yet. Be the first! 🚀</div>';
     return;
   }
-  
+
   scores.forEach((entry, index) => {
     const formatted = formatScore(entry);
     const div = document.createElement('div');
@@ -214,10 +214,10 @@ function displayLeaderboardFromCache() {
       cursor: pointer;
       ${entry.isOptimistic ? 'opacity: 0.7; border-left: 3px solid #ffa500;' : ''}
     `;
-    
+
     div.onmouseover = () => div.style.backgroundColor = '#2a2a2a';
     div.onmouseout = () => div.style.backgroundColor = 'transparent';
-    
+
     div.innerHTML = `
       <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
         <span style="color: #999; font-weight: bold; min-width: 30px; text-align: center;">
@@ -262,7 +262,7 @@ function formatScore(score) {
  */
 async function displayLeaderboard() {
   const leaderboardList = document.getElementById('leaderboardList');
-  
+
   if (!leaderboardList) {
     console.error('Leaderboard element not found');
     return;
@@ -278,7 +278,7 @@ async function displayLeaderboard() {
     `;
 
     const scores = await loadLeaderboardFromContract();
-    
+
     // Use the cached display method for consistency
     displayLeaderboardFromCache();
   } catch (error) {
@@ -307,15 +307,15 @@ async function displayLeaderboard() {
  * Listen to new score events
  */
 function listenToNewScores(callback) {
-   try {
-     const provider = new ethers.providers.WebSocketProvider(
-       'wss://rpc.monad.xyz' // WebSocket endpoint if available
-     );
-     const contract = new ethers.Contract(
-       LEADERBOARD_CONFIG.MOONLANDER_CONTRACT,
-       window.MOONLANDER_ABI || [],
-       provider
-     );
+  try {
+    const provider = new ethers.providers.WebSocketProvider(
+      'wss://rpc.monad.xyz' // WebSocket endpoint if available
+    );
+    const contract = new ethers.Contract(
+      LEADERBOARD_CONFIG.MOONLANDER_CONTRACT,
+      window.MOONLANDER_ABI || [],
+      provider
+    );
 
     contract.on('ScoreSubmitted', (player, score, landed, timestamp, event) => {
       console.log('New score event:', {
@@ -349,7 +349,7 @@ function listenToNewScores(callback) {
  */
 function startAutoRefresh(intervalSeconds = 30) {
   console.log(`Auto-refreshing leaderboard every ${intervalSeconds} seconds`);
-  
+
   setInterval(async () => {
     await displayLeaderboard();
   }, intervalSeconds * 1000);
@@ -358,18 +358,18 @@ function startAutoRefresh(intervalSeconds = 30) {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('Initializing leaderboard...');
-  
+
   // Try to load from localStorage first
   loadCacheFromStorage();
-  
+
   await displayLeaderboard();
-  
+
   // Listen for new scores and refresh
   listenToNewScores(() => {
     console.log('New score detected, refreshing leaderboard...');
     displayLeaderboard();
   });
-  
+
   // Auto-refresh every 30 seconds
   startAutoRefresh(60); // Refresh every 60 seconds instead of 30
 });
@@ -379,8 +379,13 @@ document.addEventListener('DOMContentLoaded', async () => {
  */
 async function submitScore(score, landed) {
   try {
+    // Delegate to main contract integration if available (handles Farcaster & WalletConnect)
+    if (window.contractIntegration && typeof window.contractIntegration.submitScore === 'function') {
+      return window.contractIntegration.submitScore(score, landed);
+    }
+
     if (!window.ethereum) throw new Error('No wallet connected');
-    
+
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
     const contract = new ethers.Contract(
@@ -390,25 +395,25 @@ async function submitScore(score, landed) {
     );
 
     console.log('Submitting score to enhanced contract:', score, landed);
-    
+
     // Show optimistic update immediately
     const playerAddress = await signer.getAddress();
     addOptimisticScore(playerAddress, score, landed);
-    
+
     // Submit to contract
     const tx = await contract.submitScore(score, landed);
     console.log('Score submission transaction:', tx.hash);
-    
+
     // Wait for confirmation
     const receipt = await tx.wait();
     console.log('Score confirmed on blockchain:', receipt);
-    
+
     // Refresh leaderboard to show confirmed score
     setTimeout(() => {
       leaderboardCache.lastUpdated = 0; // Force refresh
       displayLeaderboard();
     }, 2000);
-    
+
     return receipt;
   } catch (error) {
     console.error('Failed to submit score:', error);

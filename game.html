@@ -61,6 +61,21 @@
     <script src="js/particles.js"></script>
     <script src="js/moonlander-abi.js"></script>
 
+    <!-- Wallet Provider Abstraction (must load before contract-integration) -->
+    <script type="module">
+        import { WalletProviderManager, WalletError, ProviderType, NETWORKS } from './js/wallet-provider.js';
+
+        // Expose to global scope for non-module scripts
+        window._walletProviderModule = {
+            WalletProviderManager,
+            WalletError,
+            ProviderType,
+            NETWORKS
+        };
+
+        console.log('✓ Wallet provider module loaded');
+    </script>
+
     <!-- Contract integration before main -->
     <script src="js/contract-integration.js"></script>
     <script src="js/main.js"></script>

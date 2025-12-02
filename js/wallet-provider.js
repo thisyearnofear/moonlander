@@ -14,7 +14,7 @@
 
 // ============ Configuration ============
 
-export const NETWORKS = {
+const NETWORKS = {
     MONAD_MAINNET: {
         chainId: 143,
         chainIdHex: '0x8f',

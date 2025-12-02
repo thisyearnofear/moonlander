@@ -177,8 +177,17 @@ async function connectWallet(maxRetries = 2) {
 
   connectionPromise = (async () => {
     if (!walletManager) {
-      console.error('Wallet manager not initialized');
-      return false;
+      // Try to lazy initialize if module is available
+      if (window._walletProviderModule) {
+        console.log('Lazy initializing wallet manager...');
+        const { WalletProviderManager } = window._walletProviderModule;
+        walletManager = new WalletProviderManager();
+        // Ensure listeners are attached
+        attachWalletEventListeners();
+      } else {
+        console.error('Wallet manager not initialized');
+        return false;
+      }
     }
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
