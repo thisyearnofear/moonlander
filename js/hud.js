@@ -3,10 +3,10 @@ function initHud() {
     hudHeight = window.innerHeight;
 
     cameraHud = new THREE.OrthographicCamera(
-        -halfWidth,
-        halfWidth,
-        halfHeight,
-        -halfHeight,
+        0,
+        hudWidth,
+        hudHeight,
+        0,
         0,
         1000);
     sceneHud = new THREE.Scene();
@@ -20,9 +20,9 @@ function initHud() {
     hudMaterial.transparent = true;
     hudMaterial.depthTest = false;
 
-    const planeGeometry = new THREE.PlaneGeometry(gameWidth, gameHeight);
+    const planeGeometry = new THREE.PlaneGeometry(hudWidth, hudHeight);
     const hudPlane = new THREE.Mesh(planeGeometry, hudMaterial);
-    hudPlane.position.z = 500;
+    hudPlane.position.set(hudWidth / 2, hudHeight / 2, 0);
     sceneHud.add(hudPlane);
     
     // Setup multipliers overlay canvas
@@ -299,8 +299,10 @@ function worldToHudCoord(wx, wy) {
         wy *= zoom;
     }
 
-    hx = (wx / gameWidth + 0.5) * hudWidth;
-    hy = (1 - (wy / gameHeight + 0.5)) * hudHeight;
+    // Convert from world coordinates (-halfWidth to halfWidth, -halfHeight to halfHeight)
+    // to screen coordinates (0 to hudWidth, 0 to hudHeight)
+    hx = (wx + halfWidth) / gameWidth * hudWidth;
+    hy = (1 - (wy + halfHeight) / gameHeight) * hudHeight;
 
     return [hx, hy];
 }
