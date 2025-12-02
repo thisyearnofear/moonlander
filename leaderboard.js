@@ -401,11 +401,27 @@ document.addEventListener('DOMContentLoaded', function () {
   const mainMenu = document.getElementById('mainMenu');
 
   if (playBtn) {
-    playBtn.addEventListener('click', function () {
-      // Trigger payment flow
+    playBtn.addEventListener('click', async function () {
+      // Trigger payment flow with loading state
       if (window.contractIntegration && window.contractIntegration.payAndPlayGame) {
-        window.contractIntegration.payAndPlayGame();
+        // Set loading state
+        const originalText = playBtn.textContent;
+        playBtn.disabled = true;
+        playBtn.textContent = 'LOADING...';
+        playBtn.style.opacity = '0.7';
+        
+        try {
+          console.log('LFG button clicked - calling payAndPlayGame()');
+          await window.contractIntegration.payAndPlayGame();
+        } catch (error) {
+          console.error('LFG button error:', error);
+          // Reset button if there's an error
+          playBtn.disabled = false;
+          playBtn.textContent = originalText;
+          playBtn.style.opacity = '1';
+        }
       } else {
+        console.error('Contract integration not available');
         alert('Please connect your wallet first');
       }
     });

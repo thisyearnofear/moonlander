@@ -120,6 +120,17 @@ async function initializeContractIntegration() {
 
     // Try to restore previous connection
     const savedAccount = restoreWalletState();
+
+    // Also check URL parameters for fresh score (user just finished game)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isFreshScore = urlParams.get('fresh') === 'true';
+    const hasScore = urlParams.get('score');
+    if (isFreshScore && hasScore) {
+      gameStarted = true;
+      saveWalletState(); // Persist the updated state
+      console.log('✓ Game state restored from URL parameters');
+    }
+
     if (savedAccount) {
       console.log('Attempting to restore wallet connection for:', savedAccount);
       try {
@@ -306,8 +317,22 @@ async function handleWalletConnected(account) {
     }
 
     // Setup ethers providers
+    console.log('Creating Web3Provider with walletManager.currentProvider');
     ethersProvider = new ethers.providers.Web3Provider(walletManager.currentProvider);
-    ethersSigner = ethersProvider.getSigner();
+    console.log('Web3Provider created:', !!ethersProvider);
+    
+    // Get signer - may be async in some contexts
+    const signerOrPromise = ethersProvider.getSigner();
+    console.log('getSigner() returned - is promise?', signerOrPromise instanceof Promise);
+    
+    // Ensure we have the actual signer (could be async)
+    if (signerOrPromise instanceof Promise) {
+      ethersSigner = await signerOrPromise;
+    } else {
+      ethersSigner = signerOrPromise;
+    }
+    console.log('Signer ready:', !!ethersSigner);
+    
     currentAccount = account;
 
     // Network verification is now handled in connectWallet(), but we double-check here
@@ -508,7 +533,8 @@ function saveWalletState() {
     const state = {
       account: currentAccount,
       timestamp: Date.now(),
-      chainId: CONFIG.CHAIN_ID
+      chainId: CONFIG.CHAIN_ID,
+      gameStarted: gameStarted
     };
     sessionStorage.setItem('moonlander_wallet', JSON.stringify(state));
     console.log('✓ Wallet state saved');
@@ -522,10 +548,14 @@ function restoreWalletState() {
   try {
     const saved = sessionStorage.getItem('moonlander_wallet');
     if (saved) {
-      const { account, timestamp, chainId } = JSON.parse(saved);
+      const { account, timestamp, chainId, gameStarted: savedGameStarted } = JSON.parse(saved);
 
       // Only restore if saved within last 24 hours and same chain
       if (Date.now() - timestamp < 86400000 && chainId === CONFIG.CHAIN_ID) {
+        // Restore gameStarted flag
+        if (savedGameStarted !== undefined) {
+          gameStarted = savedGameStarted;
+        }
         return account;
       }
     }
@@ -548,14 +578,30 @@ function clearWalletState() {
  * Pay entry fee and start game
  */
 async function payAndPlayGame() {
+  console.log('payAndPlayGame() called');
+  console.log('Current state:', {
+    currentAccount,
+    ethersProvider: !!ethersProvider,
+    ethersSigner: !!ethersSigner,
+    connectionState
+  });
+
   if (!currentAccount) {
+    console.error('No current account');
     await showModal('Please connect your wallet to pay 100k m00nad and play.', 'Wallet Not Connected');
+    return false;
+  }
+
+  if (!ethersProvider || !ethersSigner) {
+    console.error('Provider or signer not initialized', { ethersProvider: !!ethersProvider, ethersSigner: !!ethersSigner });
+    await showModal('Wallet not properly connected. Please reconnect.', 'Connection Error');
     return false;
   }
 
   try {
     // Verify chain
     const network = await ethersProvider.getNetwork();
+    console.log('Chain verification:', network.chainId, 'vs', CONFIG.CHAIN_ID);
     if (network.chainId !== CONFIG.CHAIN_ID) {
       updateUIWithMessage('Wrong network. Please switch to Monad mainnet.');
       return false;
@@ -587,16 +633,20 @@ async function payAndPlayGame() {
     }
 
     // Call playGame() function
+    console.log('Creating moonlander contract...');
     const moonlanderContract = new ethers.Contract(
       CONFIG.MOONLANDER_CONTRACT,
       window.MOONLANDER_ABI || [],
       ethersSigner
     );
 
+    console.log('Moonlander contract created:', !!moonlanderContract);
     console.log('Submitting payment...');
     updateUIWithMessage('Confirm transaction in wallet...');
 
+    console.log('Calling playGame() on contract...');
     const tx = await moonlanderContract.playGame();
+    console.log('playGame() transaction submitted');
 
     console.log('Transaction hash:', tx.hash);
     updateUIWithMessage('Payment processing...');
@@ -615,6 +665,8 @@ async function payAndPlayGame() {
     return true;
   } catch (error) {
     console.error('Payment failed:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Full error object:', JSON.stringify(error, null, 2));
 
     if (error.code === 4001) {
       updateUIWithMessage('Transaction cancelled');
@@ -632,7 +684,9 @@ async function payAndPlayGame() {
  * Approve token spending
  */
 async function approveToken(amount) {
+  console.log('approveToken() called with amount:', amount.toString());
   try {
+    console.log('Creating token contract with signer:', !!ethersSigner);
     const tokenContract = new ethers.Contract(
       CONFIG.M00NAD_TOKEN,
       getERC20ABI(),
@@ -643,15 +697,18 @@ async function approveToken(amount) {
     updateUIWithMessage('Approve token spending in wallet...');
 
     const tx = await tokenContract.approve(CONFIG.MOONLANDER_CONTRACT, amount);
+    console.log('Approval transaction submitted:', tx.hash);
 
     updateUIWithMessage('Approval pending...');
-    await tx.wait();
+    const receipt = await tx.wait();
+    console.log('Approval receipt:', receipt);
 
     console.log('Token approval confirmed');
     updateUIWithMessage('Approval confirmed!');
     return true;
   } catch (error) {
     console.error('Approval failed:', error);
+    console.error('Approval error stack:', error.stack);
 
     if (error.code === 4001) {
       updateUIWithMessage('Approval cancelled');
@@ -797,24 +854,28 @@ async function getPlayerBalance(address) {
  * Get player's allowance for MoonlanderGame contract
  */
 async function getPlayerAllowance(address) {
+  console.log('getPlayerAllowance() called for:', address);
   try {
     if (!ethersProvider) {
       console.warn('No provider available for allowance check');
       return ethers.BigNumber.from(0);
     }
 
+    console.log('Creating token contract for allowance check...');
     const tokenContract = new ethers.Contract(
       CONFIG.M00NAD_TOKEN,
       getERC20ABI(),
       ethersProvider
     );
 
+    console.log('Calling allowance() on token contract...');
     const allowance = await tokenContract.allowance(address, CONFIG.MOONLANDER_CONTRACT);
     console.log('Allowance:', allowance.toString());
 
     return allowance;
   } catch (error) {
     console.error('Failed to fetch allowance:', error);
+    console.error('Allowance error details:', error.message, error.code);
     return ethers.BigNumber.from(0);
   }
 }

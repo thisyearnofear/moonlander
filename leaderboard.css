@@ -619,6 +619,12 @@ body:before {
   transform: translateY(0);
 }
 
+.action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
+}
+
 .action-button.primary {
   color: #00ff64;
 }
@@ -626,6 +632,11 @@ body:before {
 .action-button.primary:hover {
   background: rgba(0, 255, 100, 0.15);
   box-shadow: 0 0 20px rgba(0, 255, 100, 0.4);
+}
+
+.action-button.primary:disabled {
+  color: #00cc50;
+  background: rgba(0, 255, 100, 0.1);
 }
 
 .action-button.secondary {
