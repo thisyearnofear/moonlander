@@ -409,10 +409,17 @@ document.addEventListener('DOMContentLoaded', function () {
         playBtn.disabled = true;
         playBtn.textContent = 'LOADING...';
         playBtn.style.opacity = '0.7';
-        
+
         try {
           console.log('LFG button clicked - calling payAndPlayGame()');
-          await window.contractIntegration.payAndPlayGame();
+          const result = await window.contractIntegration.payAndPlayGame();
+
+          // If payment failed or was cancelled (returned false), reset the button
+          if (result === false) {
+            playBtn.disabled = false;
+            playBtn.textContent = originalText;
+            playBtn.style.opacity = '1';
+          }
         } catch (error) {
           console.error('LFG button error:', error);
           // Reset button if there's an error

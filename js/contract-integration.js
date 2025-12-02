@@ -320,11 +320,11 @@ async function handleWalletConnected(account) {
     console.log('Creating Web3Provider with walletManager.currentProvider');
     ethersProvider = new ethers.providers.Web3Provider(walletManager.currentProvider);
     console.log('Web3Provider created:', !!ethersProvider);
-    
+
     // Get signer - may be async in some contexts
     const signerOrPromise = ethersProvider.getSigner();
     console.log('getSigner() returned - is promise?', signerOrPromise instanceof Promise);
-    
+
     // Ensure we have the actual signer (could be async)
     if (signerOrPromise instanceof Promise) {
       ethersSigner = await signerOrPromise;
@@ -332,7 +332,7 @@ async function handleWalletConnected(account) {
       ethersSigner = signerOrPromise;
     }
     console.log('Signer ready:', !!ethersSigner);
-    
+
     currentAccount = account;
 
     // Network verification is now handled in connectWallet(), but we double-check here
@@ -645,7 +645,7 @@ async function payAndPlayGame() {
     updateUIWithMessage('Confirm transaction in wallet...');
 
     console.log('Calling playGame() on contract...');
-    const tx = await moonlanderContract.playGame();
+    const tx = await moonlanderContract.playGame({ gasLimit: 500000 });
     console.log('playGame() transaction submitted');
 
     console.log('Transaction hash:', tx.hash);
@@ -696,7 +696,7 @@ async function approveToken(amount) {
     console.log('Requesting token approval...');
     updateUIWithMessage('Approve token spending in wallet...');
 
-    const tx = await tokenContract.approve(CONFIG.MOONLANDER_CONTRACT, amount);
+    const tx = await tokenContract.approve(CONFIG.MOONLANDER_CONTRACT, amount, { gasLimit: 100000 });
     console.log('Approval transaction submitted:', tx.hash);
 
     updateUIWithMessage('Approval pending...');
@@ -751,7 +751,7 @@ async function submitScore(score, landed) {
     console.log(`Submitting score: ${score}, Landed: ${landed}`);
     updateUIWithMessage('Submitting score...');
 
-    const tx = await moonlanderContract.submitScore(score, landed);
+    const tx = await moonlanderContract.submitScore(score, landed, { gasLimit: 200000 });
     const receipt = await tx.wait();
 
     console.log('Score submitted:', receipt);
@@ -856,16 +856,14 @@ async function getPlayerBalance(address) {
 async function getPlayerAllowance(address) {
   console.log('getPlayerAllowance() called for:', address);
   try {
-    if (!ethersProvider) {
-      console.warn('No provider available for allowance check');
-      return ethers.BigNumber.from(0);
-    }
+    // Use RPC provider for read operations (more reliable)
+    const rpcProvider = new ethers.providers.JsonRpcProvider(CONFIG.RPC_URL);
 
     console.log('Creating token contract for allowance check...');
     const tokenContract = new ethers.Contract(
       CONFIG.M00NAD_TOKEN,
       getERC20ABI(),
-      ethersProvider
+      rpcProvider
     );
 
     console.log('Calling allowance() on token contract...');
@@ -887,15 +885,13 @@ async function getPlayerAllowance(address) {
  */
 async function listenToScoreSubmittedEvents(callback) {
   try {
-    if (!ethersProvider) {
-      console.warn('No provider available for event listening');
-      return;
-    }
+    // Use RPC provider for event listening (more reliable)
+    const rpcProvider = new ethers.providers.JsonRpcProvider(CONFIG.RPC_URL);
 
     const moonlanderContract = new ethers.Contract(
       CONFIG.MOONLANDER_CONTRACT,
       window.MOONLANDER_ABI || [],
-      ethersProvider
+      rpcProvider
     );
 
     moonlanderContract.on('ScoreSubmitted', (player, score, landed, timestamp, event) => {
