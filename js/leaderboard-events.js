@@ -374,58 +374,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   startAutoRefresh(60); // Refresh every 60 seconds instead of 30
 });
 
-/**
- * Submit score to enhanced contract
- */
-async function submitScore(score, landed) {
-  try {
-    // Delegate to main contract integration if available (handles Farcaster & WalletConnect)
-    if (window.contractIntegration && typeof window.contractIntegration.submitScore === 'function') {
-      return window.contractIntegration.submitScore(score, landed);
-    }
-
-    if (!window.ethereum) throw new Error('No wallet connected');
-
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    const contract = new ethers.Contract(
-      LEADERBOARD_CONFIG.MOONLANDER_CONTRACT,
-      window.MOONLANDER_ABI || [],
-      signer
-    );
-
-    console.log('Submitting score to enhanced contract:', score, landed);
-
-    // Show optimistic update immediately
-    const playerAddress = await signer.getAddress();
-    addOptimisticScore(playerAddress, score, landed);
-
-    // Submit to contract
-    const tx = await contract.submitScore(score, landed);
-    console.log('Score submission transaction:', tx.hash);
-
-    // Wait for confirmation
-    const receipt = await tx.wait();
-    console.log('Score confirmed on blockchain:', receipt);
-
-    // Refresh leaderboard to show confirmed score
-    setTimeout(() => {
-      leaderboardCache.lastUpdated = 0; // Force refresh
-      displayLeaderboard();
-    }, 2000);
-
-    return receipt;
-  } catch (error) {
-    console.error('Failed to submit score:', error);
-    throw error;
-  }
-}
-
-// Make functions available globally for optimistic updates
+// Make functions available globally for optimistic updates and leaderboard refresh
 window.leaderboardAPI = {
   addOptimisticScore,
   displayLeaderboard,
-  submitScore,
   refreshLeaderboard: () => {
     leaderboardCache.lastUpdated = 0; // Force refresh
     displayLeaderboard();

@@ -36,15 +36,19 @@ const isFreshScore = urlParams.get('fresh') === 'true';
 const finalScore = scoreFromUrl || parseInt(localStorage.getItem('lastScore')) || 0;
 const landed = landedFromUrl !== undefined ? landedFromUrl : parseInt(localStorage.getItem('lastLanded')) || 0;
 
-// Show score section only if we have a fresh score from gameplay
+// Check if score was just submitted (within last 5 seconds)
+const lastSubmittedAt = parseInt(localStorage.getItem('lastSubmittedAt')) || 0;
+const justSubmitted = Date.now() - lastSubmittedAt < 5000;
+
+// Show score section only if we have a fresh score from gameplay (but not if just submitted)
 const hasScore = scoreFromUrl > 0;
 const scoreSection = document.getElementById('scoreSection');
 const playBtn = document.getElementById('playBtn');
 const submitScoreBtn = document.getElementById('submitScoreBtn');
 const mainMenuBtn = document.getElementById('mainMenu');
 
-if (hasScore && isFreshScore) {
-  // Fresh score from just finishing a game
+if (hasScore && isFreshScore && !justSubmitted) {
+  // Fresh score from just finishing a game - show submit button
   scoreSection.style.display = 'block';
   document.getElementById('finalScore').textContent = finalScore;
   playBtn.style.display = 'none';
@@ -52,7 +56,7 @@ if (hasScore && isFreshScore) {
   playBtn.textContent = 'PLAY AGAIN 🚀';   // Set text for after submission
   mainMenuBtn.style.display = 'block';
 } else {
-  // No fresh score or just viewing leaderboard normally
+  // No fresh score or just viewing leaderboard normally (or just submitted)
   scoreSection.style.display = 'none';
   playBtn.style.display = 'block';
   playBtn.textContent = 'LFG 🚀';          // Set initial text

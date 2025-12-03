@@ -18,7 +18,7 @@
 const CONFIG = {
   CHAIN_ID: 143, // Monad Mainnet
   CHAIN_ID_HEX: "0x8f",
-  M00NAD_TOKEN: "0x22cd99ec337a2811f594340a4a41e4a3022b07",
+  M00NAD_TOKEN: "0x22cd99ec337a2811f594340a4a6e41e4a3022b07",
   M00NAD_DECIMALS: 18,
   MOONLANDER_CONTRACT: "0x399f080bB2868371D7a0024a28c92fc63C05536E",
   ENTRY_FEE: "100000",
@@ -122,14 +122,14 @@ async function initializeContractIntegration() {
     // Try to restore previous connection
     const savedAccount = restoreWalletState();
 
-    // Also check URL parameters for fresh score (user just finished game)
+    // Note: Fresh score in URL parameters indicates user just finished a game
+    // This doesn't affect gameStarted flag (which tracks payment state)
+    // The user should be able to submit score regardless of gameStarted status
     const urlParams = new URLSearchParams(window.location.search);
     const isFreshScore = urlParams.get("fresh") === "true";
     const hasScore = urlParams.get("score");
     if (isFreshScore && hasScore) {
-      gameStarted = true;
-      saveWalletState(); // Persist the updated state
-      console.log("✓ Game state restored from URL parameters");
+      console.log("✓ Fresh score detected in URL - ready for submission");
     }
 
     if (savedAccount) {
@@ -342,6 +342,11 @@ async function handleWalletConnected(account) {
       ethersSigner = signerOrPromise;
     }
     console.log("Signer ready:", !!ethersSigner);
+
+    // Validate signer has required methods
+    if (!ethersSigner || typeof ethersSigner.sendTransaction !== "function") {
+      throw new Error("Signer is not properly initialized - missing sendTransaction method");
+    }
 
     currentAccount = account;
 
@@ -686,10 +691,20 @@ async function payAndPlayGame() {
     const tx = await moonlanderContract.playGame({ gasLimit: 500000 });
     console.log("playGame() transaction submitted");
 
+    if (!tx || !tx.hash) {
+      throw new Error("Payment transaction not confirmed by wallet");
+    }
+
     console.log("Transaction hash:", tx.hash);
     updateUIWithMessage("Payment processing...");
 
-    const receipt = await tx.wait();
+    // Add timeout to prevent hanging indefinitely (especially in Farcaster)
+    const waitPromise = tx.wait(1);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Payment confirmation timeout")), 120000)
+    );
+    
+    const receipt = await Promise.race([waitPromise, timeoutPromise]);
     console.log("Payment confirmed:", receipt);
 
     gameStarted = true;
@@ -725,6 +740,10 @@ async function payAndPlayGame() {
 async function approveToken(amount, tokenAddress) {
   console.log("approveToken() called with amount:", amount.toString());
   try {
+    if (!ethersSigner) {
+      throw new Error("Wallet signer not available - please reconnect your wallet");
+    }
+
     console.log("Creating token contract with signer:", !!ethersSigner);
     const tokenContract = new ethers.Contract(
       tokenAddress || CONFIG.M00NAD_TOKEN,
@@ -740,8 +759,19 @@ async function approveToken(amount, tokenAddress) {
     });
     console.log("Approval transaction submitted:", tx.hash);
 
+    if (!tx || !tx.hash) {
+      throw new Error("Transaction not confirmed by wallet");
+    }
+
     updateUIWithMessage("Approval pending...");
-    const receipt = await tx.wait();
+    
+    // Add timeout to prevent hanging indefinitely (especially in Farcaster)
+    const waitPromise = tx.wait(1);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Approval confirmation timeout")), 60000)
+    );
+    
+    const receipt = await Promise.race([waitPromise, timeoutPromise]);
     console.log("Approval receipt:", receipt);
 
     console.log("Token approval confirmed");
@@ -767,14 +797,7 @@ async function approveToken(amount, tokenAddress) {
  * Submit score after game ends
  */
 async function submitScore(score, landed) {
-  if (!currentAccount || !gameStarted) {
-    await showModal(
-      "Please play the game first to submit a score.",
-      "Game Not Started"
-    );
-    return false;
-  }
-
+  // Validate score parameters first (before wallet checks)
   if (!Number.isInteger(score) || score <= 0) {
     await showModal(
       "The score must be a valid positive number.",
@@ -791,28 +814,68 @@ async function submitScore(score, landed) {
     return false;
   }
 
-  try {
-    const moonlanderContract = new ethers.Contract(
-      CONFIG.MOONLANDER_CONTRACT,
-      window.MOONLANDER_ABI || [],
-      ethersSigner
-    );
+  // Ensure wallet is connected before attempting submission
+  if (!currentAccount) {
+    // Try to reconnect if possible
+    console.warn("No wallet connected, attempting to reconnect...");
+    updateUIWithMessage("Connecting wallet...");
+    
+    try {
+      const connected = await connectWallet();
+      if (!connected) {
+        await showModal(
+          "Please connect your wallet to submit your score.",
+          "Wallet Not Connected"
+        );
+        return false;
+      }
+    } catch (err) {
+      console.error("Failed to connect wallet:", err);
+      await showModal(
+        "Failed to connect wallet. Please reconnect manually.",
+        "Connection Error"
+      );
+      return false;
+    }
+  }
 
-    console.log(`Submitting score: ${score}, Landed: ${landed}`);
-    updateUIWithMessage("Submitting score...");
+  try {
+     if (!ethersSigner) {
+       throw new Error("Wallet signer not available - please reconnect your wallet");
+     }
+
+     const moonlanderContract = new ethers.Contract(
+       CONFIG.MOONLANDER_CONTRACT,
+       window.MOONLANDER_ABI || [],
+       ethersSigner
+     );
+
+     console.log(`Submitting score: ${score}, Landed: ${landed}`);
+     updateUIWithMessage("Submitting score...");
 
     const tx = await moonlanderContract.submitScore(score, landed, {
       gasLimit: 200000,
     });
-    const receipt = await tx.wait();
 
+    if (!tx || !tx.hash) {
+      throw new Error("Score submission transaction not confirmed by wallet");
+    }
+
+    // Add timeout to prevent hanging indefinitely (especially in Farcaster)
+    const waitPromise = tx.wait(1);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Score submission confirmation timeout")), 120000)
+    );
+    
+    const receipt = await Promise.race([waitPromise, timeoutPromise]);
     console.log("Score submitted:", receipt);
     updateUIWithMessage("Score submitted!");
 
-    // Reset game state
+    // Clear game state since score is now submitted
     gameStarted = false;
+    saveWalletState();
 
-    // Emit custom event
+    // Emit custom event for leaderboard listeners
     window.dispatchEvent(
       new CustomEvent("scoreSubmitted", {
         detail: {
@@ -824,13 +887,14 @@ async function submitScore(score, landed) {
       })
     );
 
-    // Save and redirect
+    // Save score to localStorage for display
     localStorage.setItem("lastScore", score);
     localStorage.setItem("lastLanded", landed);
     localStorage.setItem("lastSubmittedAt", Date.now());
 
+    // Redirect to leaderboard (clear fresh flag since score is submitted)
     setTimeout(() => {
-      window.location.href = `index.html?score=${score}&landed=${landed}&fresh=true`;
+      window.location.href = `index.html`;
     }, 1500);
 
     return true;
