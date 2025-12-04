@@ -1029,7 +1029,24 @@ async function getGameTokenAddress() {
 }
 
 function getReadProvider() {
-  if (ethersProvider) return ethersProvider;
+  // If we have an active ethers provider, use it
+  if (ethersProvider) {
+    console.log("Using active ethers provider for read operations");
+    return ethersProvider;
+  }
+  
+  // If we're in Farcaster mini app environment, try to use the Farcaster wallet provider
+  if (walletManager && 
+      window._walletProviderModule && 
+      window._walletProviderModule.ProviderType &&
+      walletManager.providerType === window._walletProviderModule.ProviderType.FARCASTER && 
+      walletManager.currentProvider) {
+    console.log("Using Farcaster wallet provider for read operations");
+    return new ethers.providers.Web3Provider(walletManager.currentProvider);
+  }
+  
+  // Fallback to RPC provider for read-only operations
+  console.log("Using RPC provider for read operations (fallback)");
   return new ethers.providers.JsonRpcProvider(CONFIG.RPC_URL);
 }
 
